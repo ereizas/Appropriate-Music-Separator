@@ -1,7 +1,7 @@
 import requests, base64
 
 def spotify(link):
-    playlistID = ''
+    playlistID, appropSongIds, nonAppropSongIds = '', [], []
     #need clientID and clientSecret from a Spotify account to get an access token required to access the API
     clientID, clientSecret = '',''
     authResponse = requests.post('https://accounts.spotify.com/api/token', {
@@ -17,8 +17,16 @@ def spotify(link):
         playlistID = link[link.index('playlist/')+9:link.index('?')]
     else:
         playlistID = link[link.index('playlist/')+9:]
-    response = requests.get('https://api.spotify.com/v1/playlists/'+playlistID,headers=headers)
-    return response
+    response = requests.get('https://api.spotify.com/v1/playlists/'+playlistID+'/tracks',headers=headers)
+    data = response.json()
+    for item in data['items']:
+        if item['track']['explicit']:
+            nonAppropSongIds.append(item['track']['id'])
+        else:
+            pass
+    return nonAppropSongIds
+
+
     
 
 print(spotify('https://open.spotify.com/playlist/31hXsTQWKdum0YD6eHzLGf?si=yCdM_Gg_S6yI10rHweJl3Q'))
