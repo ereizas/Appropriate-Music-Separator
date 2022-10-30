@@ -18,13 +18,21 @@ def spotify(link):
     else:
         playlistID = link[link.index('playlist/')+9:]
     response = requests.get('https://api.spotify.com/v1/playlists/'+playlistID+'/tracks',headers=headers)
-    data = response.json()
-    for item in data['items']:
-        if item['track']['explicit']:
-            nonAppropSongIds.append(item['track']['id'])
+    data = response.json() 
+    moreSongsLeft = True
+    while(moreSongsLeft):
+        for item in data['items']:
+            if item['track']['explicit']:
+                nonAppropSongIds.append(item['track']['id'])
+                continue
+            else:
+                pass
+        if(data['next']!=None):
+            response = requests.get(data['next'],headers=headers)
+            data=response.json()
         else:
-            pass
-    return nonAppropSongIds
+            moreSongsLeft=False
+    
 
 
     
