@@ -35,7 +35,20 @@ def encrypt(string):
      0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
      0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
      0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2)
-    
+
+    for chunk in range(int(len(bitStr)/512)):
+        arrOf32BitWords = []
+        word = ''
+        #to restrict the loop to only check the chunk it is on
+        for b in range((chunk+1)*512-512,(chunk+1)*512):
+            word+=bitStr[b]
+            if((b+1)%32==0):
+                arrOf32BitWords.append(word)
+                word=''
+        for num in range(64-len(arrOf32BitWords)):
+            arrOf32BitWords.append('00000000000000000000000000000000')
+        #calculate values for 0 initialized elements
+
     
 
 
