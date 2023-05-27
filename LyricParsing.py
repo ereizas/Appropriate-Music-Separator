@@ -1,5 +1,21 @@
 import requests, config
 
+##decrypts the Vigenere cypher and returns a list of the inappropriate words to look for
+def getInappropWordList(file):
+    inappropWordList = []
+    read_file = open(file,"r")
+    lines = read_file.readlines()
+    for line in range(len(lines)):
+        key = "music"
+        temp = ""
+        for c in range(len(lines[line])):
+            if(ord(lines[line][c])>96):
+                temp+=chr((((ord(lines[line][c])-97)-(ord(key[c%len(key)])-97))%26)+97)
+            elif lines[line][c]!='\n':
+                temp+=lines[line][c]
+        inappropWordList.append(temp)
+    return inappropWordList
+
 #these functions return a boolean value: true for appropriate, false for not
 
 def lyristLyrics(strArtists,songTitleFormatted):
