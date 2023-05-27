@@ -1,1 +1,4 @@
 config.py
+OriginalInappropWordList.txt
+__pycache__
+.venv
