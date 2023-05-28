@@ -37,15 +37,23 @@ def parseSpotifyPlaylist(link):
                         songTitleFormatted+=char
                 songTitleFormatted=songTitleFormatted.replace('0x','0%')
                 inappropWordList = LyricParsing.getInappropWordList("InappropriateWords.txt")
-                LyricParsing.lyristLyrics('%20'.join(strArtists),songTitleFormatted,inappropWordList)
-                LyricParsing.geniusLyrics(artists,songTitle,inappropWordList)
+                lyristInapprop = LyricParsing.parseLyristLyrics('%20'.join(strArtists),songTitleFormatted,inappropWordList)
+                if lyristInapprop == False:
+                    appropSongIds.append(item['track']['id'])
+                    print(item['track']['artists'][0]['name'] + ' - ' + item['track']['name'])
+                elif lyristInapprop == None:
+                    geniusInapprop = LyricParsing.parseGeniusLyrics(artists,songTitle,inappropWordList)
+                    if geniusInapprop==False:
+                        appropSongIds.append(item['track']['id'])
+                        print(item['track']['artists'][0]['name'] + ' - ' + item['track']['name'])
         if(data['next']!=None):
             response = requests.get(data['next'],headers=headers)
             data=response.json()
         else:
             moreSongsLeft=False
+    return appropSongIds
 
-print(parseSpotifyPlaylist('https://open.spotify.com/playlist/31hXsTQWKdum0YD6eHzLGf?si=yCdM_Gg_S6yI10rHweJl3Q'))
+print(parseSpotifyPlaylist('https://open.spotify.com/playlist/3Zc0vSZnaQK9eJvhnvnWpi'))
 
 def parseAppleMusicPlaylist(link):
     pass
