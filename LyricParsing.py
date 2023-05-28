@@ -1,4 +1,5 @@
 import requests, config
+from lyricsgenius import Genius
 
 ##decrypts the Vigenere cypher and returns a list of the inappropriate words to look for
 def getInappropWordList(file):
@@ -18,14 +19,15 @@ def getInappropWordList(file):
 
 #these functions return a boolean value: true for appropriate, false for not
 
-def lyristLyrics(strArtists,songTitleFormatted):
+def lyristLyrics(strArtists,songTitleFormatted,inappropWordList):
     response = requests.get('https://lyrist.vercel.app/api/' + songTitleFormatted + '/' + strArtists)
     lyrics = ''
     data = response.json()
-    if(response.status_code==200):
+    if(response.status_code==200 and lyrics!={}):
         lyrics=data['lyrics']
+        
 
-def geniusLyrics(artists,strArtists, songTitle, songTitleFormatted):
+def geniusLyrics(artists, songTitle,inappropWordList):
     clientID, clientSecret = config.geniusClientID,config.geniusClientSecret
     authResponse = requests.post('https://api.genius.com/oauth/token', {
     'grant_type': 'client_credentials',
@@ -34,22 +36,7 @@ def geniusLyrics(artists,strArtists, songTitle, songTitleFormatted):
     })
     authResponseData = authResponse.json()
     accessToken = authResponseData['access_token']
-    geniusReqHeaders = {'Authorization': 'Bearer {token}'.format(token=accessToken)}
-    geniusSearchResponse = requests.get("https://api.genius.com/search?q="+ '%20'.join(strArtists)+'%20'+songTitleFormatted,headers=geniusReqHeaders)
-    geniusSearchData = geniusSearchResponse.json()
-    print(' '.join(artists) + '-' + songTitle + '\n')
-    for hit in geniusSearchData['response']['hits']:
-        artistsAllPresent = True
-        for artist in artists:
-            if artist.lower() not in hit['result']['artist_names'].lower():
-                print(hit['result']['id'])
-                print(hit['result']['artist_names'].lower()+'\n')
-                artistsAllPresent=False
-                break
-        if not artistsAllPresent:
-            continue
-        elif hit['result']['language'] == 'en' and songTitle in hit['result']['full_title']:
-            songResponse = requests.get('https://api.genius.com/songs/' + str(hit['result']['id']) + '?text_format=plain',headers=geniusReqHeaders)
-            songData = songResponse.json()
-            print(songData['response']['song']['embed_content'] + '\n')
-            break
+    genius = Genius(accessToken)
+    print(' '.join(artists) + '-' + songTitle + ':\n')
+    song = genius.search_song(artist = ' '.join(artists), title=songTitle)
+    print(song.lyrics)
