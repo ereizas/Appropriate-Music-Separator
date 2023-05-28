@@ -45,4 +45,10 @@ def parseGeniusLyrics(artists, songTitle,inappropWordList):
     genius = Genius(accessToken)
     print(' '.join(artists) + '-' + songTitle + ':\n')
     song = genius.search_song(artist = ' '.join(artists), title=songTitle)
-    print(song.lyrics)
+    if(song!=None):
+        for word in inappropWordList:
+            if word in song.lyrics:
+                return True
+        return False
+    else:
+        return None
