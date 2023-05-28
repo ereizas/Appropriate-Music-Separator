@@ -19,15 +19,21 @@ def getInappropWordList(file):
 
 #these functions return a boolean value: true for appropriate, false for not
 
-def lyristLyrics(strArtists,songTitleFormatted,inappropWordList):
+def parseLyristLyrics(strArtists,songTitleFormatted,inappropWordList):
     response = requests.get('https://lyrist.vercel.app/api/' + songTitleFormatted + '/' + strArtists)
     lyrics = ''
     data = response.json()
-    if(response.status_code==200 and lyrics!={}):
+    if(response.status_code==200 and 'lyrics' in data):
         lyrics=data['lyrics']
+        for word in inappropWordList:
+            if word in lyrics:
+                return True
+        return False
+    else:
+        return None
         
 
-def geniusLyrics(artists, songTitle,inappropWordList):
+def parseGeniusLyrics(artists, songTitle,inappropWordList):
     clientID, clientSecret = config.geniusClientID,config.geniusClientSecret
     authResponse = requests.post('https://api.genius.com/oauth/token', {
     'grant_type': 'client_credentials',

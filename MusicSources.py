@@ -1,7 +1,7 @@
 import requests, LyricParsing, config
 from bs4 import BeautifulSoup
 
-def spotify(link):
+def parseSpotifyPlaylist(link):
     playlistID, appropSongIds= '', []
     #need clientID and clientSecret from a Spotify account to get an access token required to access the API
     clientID, clientSecret = config.spotifyClientID,config.spotifyClientSecret
@@ -45,19 +45,19 @@ def spotify(link):
         else:
             moreSongsLeft=False
 
-print(spotify('https://open.spotify.com/playlist/31hXsTQWKdum0YD6eHzLGf?si=yCdM_Gg_S6yI10rHweJl3Q'))
+print(parseSpotifyPlaylist('https://open.spotify.com/playlist/31hXsTQWKdum0YD6eHzLGf?si=yCdM_Gg_S6yI10rHweJl3Q'))
 
-def appleMusic(link):
+def parseAppleMusicPlaylist(link):
     pass
 
-def youtube(link):
+def parseYoutubePlaylist(link):
     pass
 
-def soundcloud(link):
+def parseSoundcloudPlaylist(link):
     pass
 
-def folder(link):
+def parseFolderPlaylist(link):
     pass
 
-def m3u(link):
+def parseM3uPlaylist(link):
     pass
