@@ -3,22 +3,19 @@ from bs4 import BeautifulSoup
 
 def getAppropSpotifySongs(link):
     """
-    This function is meant to parse the Spotfiy playlist data to retrieve the necessary ids for songs and update an array of appropriate songs with the ids.
+    This function is meant to parse the Spotfiy playlist data to retrieve ids for the appropriate songs and update an array with those ids.
     
     @param link (str): link to playlist
     """
     playlistID, appropSongIds= '', []
-    #need clientID and clientSecret from a Spotify account to get an access token required to access the API
-    clientID, clientSecret = config.spotifyClientID,config.spotifyClientSecret
     authResponse = requests.post('https://accounts.spotify.com/api/token', {
     'grant_type': 'client_credentials',
-    'client_id': clientID,
-    'client_secret': clientSecret,
+    'client_id':  config.spotifyClientID,
+    'client_secret': config.spotifyClientSecret,
     })
     authResponseData = authResponse.json()
     accessToken = authResponseData['access_token']
     headers = {'Authorization': 'Bearer {token}'.format(token=accessToken)}
-    data = {}
     #extracts playlist id from the two types of spotify links
     if('?' in link):
         playlistID = link[link.index('playlist/')+9:link.index('?')]
@@ -60,17 +57,17 @@ def getAppropSpotifySongs(link):
 
 #print(getApprop('https://open.spotify.com/playlist/3Zc0vSZnaQK9eJvhnvnWpi'))
 
-def parseAppleMusicPlaylist(link):
+def getAppropAppleSongs(link):
     pass
 
-def parseYoutubePlaylist(link):
+def getAppropYTSongs(link):
     pass
 
-def parseSoundcloudPlaylist(link):
+def getAppropSouncloudSongs(link):
     pass
 
-def parseFolderPlaylist(link):
+def getAppropFolderSongs(link):
     pass
 
-def parseM3uPlaylist(link):
+def getAppropM3USongs(link):
     pass
