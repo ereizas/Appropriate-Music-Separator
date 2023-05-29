@@ -1,7 +1,12 @@
 import requests, LyricParsing, config
 from bs4 import BeautifulSoup
 
-def parseSpotifyPlaylist(link):
+def getAppropSpotifySongs(link):
+    """
+    This function is meant to parse the Spotfiy playlist data to retrieve the necessary ids for songs and update an array of appropriate songs with the ids.
+    
+    @param link (str): link to playlist
+    """
     playlistID, appropSongIds= '', []
     #need clientID and clientSecret from a Spotify account to get an access token required to access the API
     clientID, clientSecret = config.spotifyClientID,config.spotifyClientSecret
@@ -53,7 +58,7 @@ def parseSpotifyPlaylist(link):
             moreSongsLeft=False
     return appropSongIds
 
-print(parseSpotifyPlaylist('https://open.spotify.com/playlist/3Zc0vSZnaQK9eJvhnvnWpi'))
+#print(getApprop('https://open.spotify.com/playlist/3Zc0vSZnaQK9eJvhnvnWpi'))
 
 def parseAppleMusicPlaylist(link):
     pass
