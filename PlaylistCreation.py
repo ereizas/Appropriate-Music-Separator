@@ -1,4 +1,4 @@
-import requests, config, MusicSources
+import requests, config, PlaylistParsing
 import json
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
