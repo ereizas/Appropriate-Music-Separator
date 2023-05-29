@@ -1,8 +1,19 @@
+"""
+Author: Eric Reizas
+This file is meant to provide functions that help determine whether songs are inappropriate for children based on lyrics.
+"""
 import requests, config
 from lyricsgenius import Genius
 
 ##decrypts the Vigenere cypher and returns a list of the inappropriate words to look for
 def getInappropWordList(file):
+    """
+    Decrypts the Vigenere cypher and returns a list of the inappropriate words to look for
+
+    @param file (str): name of the file with the encrypted words
+    @return inappropWordList (str[]): list of decrypted inappropriate words
+    """
+
     inappropWordList = []
     read_file = open(file,"r")
     lines = read_file.readlines()
@@ -20,6 +31,15 @@ def getInappropWordList(file):
 #these functions return a boolean value: true for appropriate, false for not
 
 def parseLyristLyrics(strArtists,songTitleFormatted,inappropWordList):
+    """
+    Looks the inappropriate word list and determines if any appear for the Lyrist lyrics of one song
+
+    @param strArtists (str): artist names
+    @param songTitleFormatted (str): song title with certain characters formatted for url
+    @param inappropWordList (str[]): list of inappropriate words
+    @return : None on error, False if none of the words from inappropWordList appear, or True if at least one does
+    """
+
     response = requests.get('https://lyrist.vercel.app/api/' + songTitleFormatted + '/' + strArtists)
     lyrics = ''
     data = response.json()
@@ -32,8 +52,16 @@ def parseLyristLyrics(strArtists,songTitleFormatted,inappropWordList):
     else:
         return None
         
-
 def parseGeniusLyrics(artists, songTitle,inappropWordList):
+    """
+    Looks the inappropriate word list and determines if any appear for the Genius lyrics of one song
+
+    @param strArtists (str): artist names
+    @param songTitle
+    @param inappropWordList (str[]): list of inappropriate words
+    @return : None on error, False if none of the words from inappropWordList appear, or True if at least one does
+    """
+     
     clientID, clientSecret = config.geniusClientID,config.geniusClientSecret
     authResponse = requests.post('https://api.genius.com/oauth/token', {
     'grant_type': 'client_credentials',
