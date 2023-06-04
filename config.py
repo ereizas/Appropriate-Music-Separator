@@ -1,5 +1,5 @@
-spotifyClientID = 
-spotifyClientSecret = 
-geniusClientID = 
-geniusClientSecret = 
-spotifyUserID =
+spotifyClientID = ''
+spotifyClientSecret = ''
+geniusClientID = ''
+geniusClientSecret = ''
+spotifyUserID = ''
