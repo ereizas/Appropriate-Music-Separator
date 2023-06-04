@@ -92,3 +92,17 @@ def parseGeniusLyrics(artists, songTitle,inappropWordList):
         return False
     else:
         return None
+
+def parseAZLyrics(artists, songTitle,inappropWordList):
+    api = azapi.AZlyrics()
+    api.artist=artists
+    api.title=songTitle
+    lyrics=api.getLyrics()
+    if type(lyrics) is not int:
+        print("Retrieved AZ Lyrics")
+        for word in inappropWordList:
+            if word in lyrics:
+                return True
+        return False
+    else:
+        return None 
