@@ -1,9 +1,11 @@
+#look for more APIs because lyrist limits you to 150 requests per hour and the genius one is slow
 """
 Author: Eric Reizas
 This file is meant to provide functions that help determine whether songs are inappropriate for children based on lyrics.
 """
 import requests, config
 from lyricsgenius import Genius
+import azapi
 
 ##decrypts the Vigenere cypher and returns a list of the inappropriate words to look for
 def getInappropWordList(file):
@@ -42,14 +44,20 @@ def parseLyristLyrics(strArtists,songTitleFormatted,inappropWordList):
 
     response = requests.get('https://lyrist.vercel.app/api/' + songTitleFormatted + '/' + strArtists)
     lyrics = ''
-    data = response.json()
-    if(response.status_code==200 and 'lyrics' in data):
-        lyrics=data['lyrics']
-        for word in inappropWordList:
-            if word in lyrics:
-                return True
-        return False
+    if(response.status_code==200):
+        data = response.json()
+        if('lyrics' in data):
+            lyrics=data['lyrics']
+            print("Retrieved Lyrist Lyrics")
+            for word in inappropWordList:
+                if word in lyrics:
+                    return True
+            return False
+        else:
+            print("Could not retrieve lyric data")
+            return None
     else:
+        print("Error in retrieving lyric data")
         return None
         
 def parseGeniusLyrics(artists, songTitle,inappropWordList):
@@ -70,10 +78,14 @@ def parseGeniusLyrics(artists, songTitle,inappropWordList):
     })
     authResponseData = authResponse.json()
     accessToken = authResponseData['access_token']
-    genius = Genius(accessToken)
-    print(' '.join(artists) + '-' + songTitle + ':\n')
-    song = genius.search_song(artist = ' '.join(artists), title=songTitle)
+    genius = Genius(access_token=accessToken,timeout=5,retries=3)
+    song = ''
+    try:
+        song = genius.search_song(title=songTitle,artist=artists,get_full_info=False)
+    except:
+        pass
     if(song!=None):
+        print("Retrieved Genius Lyrics")
         for word in inappropWordList:
             if word in song.lyrics:
                 return True
