@@ -1,5 +1,4 @@
 import requests, LyricParsing, config
-from bs4 import BeautifulSoup
 
 def getAppropSpotifySongs(link):
     """
@@ -25,37 +24,58 @@ def getAppropSpotifySongs(link):
     data = response.json() 
     moreSongsLeft = True
     while(moreSongsLeft):
+        #index for lyricParsers (declared later)
+        lyricParsersInd = 0
         for item in data['items']:
             if not item['track']['explicit']:
-                artists,strArtists, songTitle, songTitleFormatted = [], [], item['track']['name'], ''
+                artists,artistsFormatted, songTitle, songTitleFormatted = [], [], item['track']['name'], ''
                 for artist in item['track']['artists']:
+                    artists.append(artist['name'])
                     if(artist['name'] not in songTitle):
-                        strArtists.append(artist['name'].replace(' ','%20'))
-                        artists.append(artist['name'])
+                        artistsTemp = ''
+                        for char in artist['name']:
+                            if char not in '\^~`[]}{|\'\"<>#%/?@!$&=,+;:':
+                                artistsTemp+=char
+                            else:
+                                artistsTemp+=hex(ord(char))
+                        artistsTemp.replace("0x","0%")
+                        artistsFormatted.append(artistsTemp)
                 for char in songTitle:
-                    if char in '\^~`[]}{|\'\"<>#%/?@!$&=,+;:':
-                        songTitleFormatted+=hex(ord(char))
-                    else:
+                    if char not in '\^~`[]}{|\'\"<>#%/?@!$&=,+;:':
                         songTitleFormatted+=char
+                    else:
+                        songTitleFormatted+=hex(ord(char))
                 songTitleFormatted=songTitleFormatted.replace('0x','0%')
                 inappropWordList = LyricParsing.getInappropWordList("InappropriateWords.txt")
-                lyristInapprop = LyricParsing.parseLyristLyrics('%20'.join(strArtists),songTitleFormatted,inappropWordList)
-                if lyristInapprop == False:
-                    appropSongIds.append(item['track']['id'])
-                    print(item['track']['artists'][0]['name'] + ' - ' + item['track']['name'])
-                elif lyristInapprop == None:
-                    geniusInapprop = LyricParsing.parseGeniusLyrics(artists,songTitle,inappropWordList)
-                    if geniusInapprop==False:
+                songInapprop = None
+                #number for how many lyric parsing functions return None
+                numNoneRetVals = 0
+                lyricParsers = [LyricParsing.parseAZLyrics,LyricParsing.parseLyristLyrics,LyricParsing.parseGeniusLyrics]
+                artistsFormatted='%20'.join(artistsFormatted)
+                artists=' '.join(artists)
+                while(songInapprop==None):
+                    if lyricParsersInd<2:
+                        songInapprop = lyricParsers[lyricParsersInd](artistsFormatted,songTitleFormatted,inappropWordList)
+                    else:
+                        songInapprop = lyricParsers[lyricParsersInd](artists,songTitle,inappropWordList)
+                    lyricParsersInd=(lyricParsersInd+1)%len(lyricParsers)
+                    if songInapprop==None:
+                        numNoneRetVals+=1
+                        if(numNoneRetVals==len(lyricParsers)):
+                            numNoneRetVals=0
+                            lyricParsersInd=0
+                            break
+                    elif songInapprop==False:
                         appropSongIds.append(item['track']['id'])
-                        print(item['track']['artists'][0]['name'] + ' - ' + item['track']['name'])
+                        numNoneRetVals=0
+                    else:
+                        numNoneRetVals=0
         if(data['next']!=None):
             response = requests.get(data['next'],headers=headers)
             data=response.json()
         else:
             moreSongsLeft=False
     return appropSongIds
-
-#print(getApprop('https://open.spotify.com/playlist/3Zc0vSZnaQK9eJvhnvnWpi'))
 
 def getAppropAppleSongs(link):
     pass
