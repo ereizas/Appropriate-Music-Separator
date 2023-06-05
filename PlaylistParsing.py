@@ -1,10 +1,11 @@
 import requests, LyricParsing, config
 
-def getAppropSpotifySongs(link):
+def getAppropSpotifySongs(link: str)->list[str]:
     """
-    This function is meant to parse the Spotfiy playlist data to retrieve ids for the appropriate songs and update an array with those ids.
+    This function is meant to parse the Spotfiy playlist data to retrieve the Spotify ids for the appropriate songs and update and return an array with those ids.
     
-    @param link (str): link to playlist
+    @param link : link to playlist
+    @return appropSongIds : list with string Spotify ids of the appropriate songs in the playlist
     """
     playlistID, appropSongIds= '', []
     authResponse = requests.post('https://accounts.spotify.com/api/token', {
@@ -21,7 +22,7 @@ def getAppropSpotifySongs(link):
     else:
         playlistID = link[link.index('playlist/')+9:]
     response = requests.get('https://api.spotify.com/v1/playlists/'+playlistID+'/tracks',headers=headers)
-    data = response.json() 
+    data = response.json()
     moreSongsLeft = True
     while(moreSongsLeft):
         #index for lyricParsers (declared later)
@@ -63,7 +64,7 @@ def getAppropSpotifySongs(link):
                         numNoneRetVals+=1
                         if(numNoneRetVals==len(lyricParsers)):
                             numNoneRetVals=0
-                            lyricParsersInd=0
+                            lyricParsersInd=(lyricParsersInd+1)%len(lyricParsers)
                             break
                     elif songInapprop==False:
                         appropSongIds.append(item['track']['id'])

@@ -8,12 +8,12 @@ from lyricsgenius import Genius
 import azapi
 
 ##decrypts the Vigenere cypher and returns a list of the inappropriate words to look for
-def getInappropWordList(file):
+def getInappropWordList(file: str)->list[str]:
     """
     Decrypts the Vigenere cypher and returns a list of the inappropriate words to look for
 
-    @param file (str): name of the file with the encrypted words
-    @return inappropWordList (str[]): list of decrypted inappropriate words
+    @param file : name of the file with the encrypted words
+    @return inappropWordList : list of decrypted inappropriate words
     """
 
     inappropWordList = []
@@ -32,13 +32,13 @@ def getInappropWordList(file):
 
 #these functions return a boolean value: true for appropriate, false for not
 
-def parseLyristLyrics(strArtists,songTitleFormatted,inappropWordList):
+def parseLyristLyrics(strArtists: str,songTitleFormatted: str,inappropWordList: list[str]):
     """
     Looks the inappropriate word list and determines if any appear for the Lyrist lyrics of one song
 
-    @param strArtists (str): artist names
-    @param songTitleFormatted (str): song title with certain characters formatted for url
-    @param inappropWordList (str[]): list of inappropriate words
+    @param strArtists : artist names
+    @param songTitleFormatted : song title with certain characters formatted for url
+    @param inappropWordList : list of inappropriate words
     @return : None on error, False if none of the words from inappropWordList appear, or True if at least one does
     """
 
@@ -60,13 +60,13 @@ def parseLyristLyrics(strArtists,songTitleFormatted,inappropWordList):
         print("Error in retrieving lyric data")
         return None
         
-def parseGeniusLyrics(artists, songTitle,inappropWordList):
+def parseGeniusLyrics(artists: str, songTitle: str, inappropWordList: list[str]):
     """
-    Looks the inappropriate word list and determines if any appear for the Genius lyrics of one song
+    Looks through the inappropriate word list and determines if any appear for the Genius lyrics of the song
 
-    @param strArtists (str): artist names
+    @param artists : artist names
     @param songTitle
-    @param inappropWordList (str[]): list of inappropriate words
+    @param inappropWordList : list of inappropriate words
     @return : None on error, False if none of the words from inappropWordList appear, or True if at least one does
     """
      
@@ -79,7 +79,7 @@ def parseGeniusLyrics(artists, songTitle,inappropWordList):
     authResponseData = authResponse.json()
     accessToken = authResponseData['access_token']
     genius = Genius(access_token=accessToken,timeout=5,retries=3)
-    song = ''
+    song = None
     try:
         song = genius.search_song(title=songTitle,artist=artists,get_full_info=False)
     except:
@@ -93,7 +93,16 @@ def parseGeniusLyrics(artists, songTitle,inappropWordList):
     else:
         return None
 
-def parseAZLyrics(artists, songTitle,inappropWordList):
+def parseAZLyrics(artists: str, songTitle: str,inappropWordList: list[str]):
+    """
+    Looks through inappropriate word list and determines if any appear in the lyrics retrieved from the AZ Lyrics API
+
+    @param artists : artist names
+    @param songTitle
+    @param inappropWordList : list of inappropriate words
+    @return : None on error, False if none of the words from inappropWordList appear, or True if at least one does
+    """
+    
     api = azapi.AZlyrics()
     api.artist=artists
     api.title=songTitle
