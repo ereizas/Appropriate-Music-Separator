@@ -1,4 +1,9 @@
 import requests, LyricParsing, config
+import google_auth_oauthlib.flow
+import googleapiclient.discovery
+import googleapiclient.errors
+from youtube_transcript_api import YouTubeTranscriptApi
+#Test invalid links given
 
 def getAppropSpotifySongs(link: str)->list[str]:
     """
@@ -99,7 +104,27 @@ def getAppropSpotifySongs(link: str)->list[str]:
     return appropSongIds
 
 def getAppropYTSongs(link):
-    pass
+    #given a playlist link from either a specific video on the list (which means extra data in the link) or just the playlist itself, lastAmpInd will be the needed end index for playlistID
+    lastAmpInd = link.rfind('&')
+    listEqInd = link.find('list=')
+    if(lastAmpInd<listEqInd):
+        lastAmpInd = len(link)
+    playlistID = link[link.index('list=')+5:lastAmpInd]
+    flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
+    'client_secret.apps.googleusercontent.com.json', 'https://www.googleapis.com/auth/youtube.readonly')
+    credentials = flow.run_local_server()
+    youtube = googleapiclient.discovery.build('youtube', 'v3', credentials=credentials)
+    #build loop to keep requesting by using next field in the json
+    request = youtube.playlistItems().list(
+        part="contentDetails",
+        maxResults=50,
+        playlistId=playlistID
+    )
+    response = request.execute()
+    for item in response['items']:
+        #figure out how to handle errors with the transcript library
+        transcript = YouTubeTranscriptApi.get_transcript(item['contentDetails']['videoId'])
+        print(transcript)
 
 def getAppropYTMusicSongs(link):
     pass
@@ -115,4 +140,4 @@ def getAppropFolderSongs(link):
 def getAppropM3USongs(link):
     pass
 
-getAppropYTSongs('https://www.youtube.com/playlist?list=PLGW5ZtQQAqBp8Ci_UwlIVSCRdTQVMh0iB')
+#getAppropYTSongs('')
