@@ -24,9 +24,28 @@ def getAppropSpotifySongs(link: str)->list[str]:
     response = requests.get('https://api.spotify.com/v1/playlists/'+playlistID+'/tracks',headers=headers)
     data = response.json()
     moreSongsLeft = True
+    #var used for reattempting get request for next data for a playlist
+    nextTempLink = ''
     while(moreSongsLeft):
         #index for lyricParsers (declared later)
         lyricParsersInd = 0
+        #reattempting request if data does not have required info
+        if response.status_code==401:
+           authResponse = requests.post('https://accounts.spotify.com/api/token', {
+            'grant_type': 'client_credentials',
+            'client_id':  config.spotifyClientID,
+            'client_secret': config.spotifyClientSecret,
+            })
+           authResponseData = authResponse.json()
+           accessToken = authResponseData['access_token']
+           headers = {'Authorization': 'Bearer {token}'.format(token=accessToken)} 
+        elif 'items' not in data and nextTempLink!='':
+            attempts = 0
+            while attempts<3 and 'items' not in data:
+                response = requests.get(nextTempLink,headers=headers)
+                data = response.json()
+                attempts+=1
+                print(data)
         for item in data['items']:
             if not item['track']['explicit']:
                 artists,artistsFormatted, songTitle, songTitleFormatted = [], [], item['track']['name'], ''
@@ -72,19 +91,22 @@ def getAppropSpotifySongs(link: str)->list[str]:
                     else:
                         numNoneRetVals=0
         if(data['next']!=None):
+            nextTempLink = data['next']
             response = requests.get(data['next'],headers=headers)
             data=response.json()
         else:
             moreSongsLeft=False
     return appropSongIds
 
-def getAppropAppleSongs(link):
-    pass
-
 def getAppropYTSongs(link):
     pass
 
+def getAppropYTMusicSongs(link):
+    pass
 def getAppropSouncloudSongs(link):
+    pass
+
+def getAppropPandoraSongs(link):
     pass
 
 def getAppropFolderSongs(link):
@@ -92,3 +114,5 @@ def getAppropFolderSongs(link):
 
 def getAppropM3USongs(link):
     pass
+
+getAppropYTSongs('https://www.youtube.com/playlist?list=PLGW5ZtQQAqBp8Ci_UwlIVSCRdTQVMh0iB')
