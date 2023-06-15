@@ -1,4 +1,3 @@
-#look for more APIs because lyrist limits you to 150 requests per hour and the genius one is slow
 """
 Author: Eric Reizas
 This file is meant to provide functions that help determine whether songs are inappropriate for children based on lyrics.
@@ -6,7 +5,7 @@ This file is meant to provide functions that help determine whether songs are in
 import requests, config
 from lyricsgenius import Genius
 import azapi
-
+from youtube_transcript_api import YouTubeTranscriptApi
 ##decrypts the Vigenere cypher and returns a list of the inappropriate words to look for
 def getInappropWordList(file: str)->list[str]:
     """
@@ -115,3 +114,16 @@ def parseAZLyrics(artists: str, songTitle: str,inappropWordList: list[str]):
         return False
     else:
         return None 
+
+def parseYTTranscript(data,inappropWordList):
+    #figure out how to handle errors with the transcript library
+    try:
+        transcript = YouTubeTranscriptApi.get_transcript(data['contentDetails']['videoId'])
+        for word in inappropWordList:
+            for blurb in transcript:
+                if word in blurb['text']:
+                    return True
+        return data['contentDetails']['videoId']
+    except:
+        return None
+    
