@@ -2,7 +2,6 @@ import requests, LyricParsing, config
 import google_auth_oauthlib.flow
 import googleapiclient.discovery
 import googleapiclient.errors
-from youtube_transcript_api import YouTubeTranscriptApi
 #Test invalid links given
 
 def getAppropSpotifySongs(link: str)->list[str]:
@@ -114,18 +113,28 @@ def getAppropYTSongs(link):
     'client_secret.apps.googleusercontent.com.json', 'https://www.googleapis.com/auth/youtube.readonly')
     credentials = flow.run_local_server()
     youtube = googleapiclient.discovery.build('youtube', 'v3', credentials=credentials)
-    #build loop to keep requesting by using next field in the json
-    request = youtube.playlistItems().list(
-        part="contentDetails",
-        maxResults=50,
-        playlistId=playlistID
-    )
-    response = request.execute()
-    for item in response['items']:
-        #figure out how to handle errors with the transcript library
-        transcript = YouTubeTranscriptApi.get_transcript(item['contentDetails']['videoId'])
-        print(transcript)
-
+    numResults = 50
+    nextPageToken = ''
+    inappropWordList = LyricParsing.getInappropWordList("InappropriateWords.txt")
+    appropSongIDs = []
+    #While the results returned by the current request is greater than or equal to 50 (the max number of results that can be returned), the program will keep requesting transcripts
+    while numResults>=50:
+        request = youtube.playlistItems().list(
+            part="contentDetails",
+            maxResults=50,
+            playlistId=playlistID,
+            pageToken = nextPageToken
+        )
+        response = request.execute()
+        numResults = response['pageInfo']['totalResults']
+        for item in response['items']:
+            parseYTTranscrRetVal = LyricParsing.parseYTTranscript(item,inappropWordList)
+            if type(parseYTTranscrRetVal)==str:
+                appropSongIDs.append(parseYTTranscrRetVal)
+        if 'nextPageToken' in response:
+            nextPageToken=response['nextPageToken']
+    print(appropSongIDs)
+        
 def getAppropYTMusicSongs(link):
     pass
 def getAppropSouncloudSongs(link):
@@ -140,4 +149,4 @@ def getAppropFolderSongs(link):
 def getAppropM3USongs(link):
     pass
 
-#getAppropYTSongs('')
+getAppropYTSongs('https://www.youtube.com/watch?v=lKz-2zIhL6I&list=PL3p01WtxiCCr_4fQ70ZbTqKS_6KyBLo7i')
