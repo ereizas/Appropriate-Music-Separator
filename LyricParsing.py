@@ -6,11 +6,12 @@ import requests, config
 from lyricsgenius import Genius
 import azapi
 from youtube_transcript_api import YouTubeTranscriptApi
+#declared globally to allow fair cycling of lyrics apis
+lyricParsersInd = 0
 ##decrypts the Vigenere cypher and returns a list of the inappropriate words to look for
 def getInappropWordList(file: str)->list[str]:
     """
     Decrypts the Vigenere cypher and returns a list of the inappropriate words to look for
-
     @param file : name of the file with the encrypted words
     @return inappropWordList : list of decrypted inappropriate words
     """
@@ -33,8 +34,7 @@ def getInappropWordList(file: str)->list[str]:
 
 def parseLyristLyrics(strArtists: str,songTitleFormatted: str,inappropWordList: list[str]):
     """
-    Looks the inappropriate word list and determines if any appear for the Lyrist lyrics of one song
-
+    Looks through the inappropriate word list and determines if any appear for the Lyrist lyrics of one song
     @param strArtists : artist names
     @param songTitleFormatted : song title with certain characters formatted for url
     @param inappropWordList : list of inappropriate words
@@ -62,7 +62,6 @@ def parseLyristLyrics(strArtists: str,songTitleFormatted: str,inappropWordList: 
 def parseGeniusLyrics(artists: str, songTitle: str, inappropWordList: list[str]):
     """
     Looks through the inappropriate word list and determines if any appear for the Genius lyrics of the song
-
     @param artists : artist names
     @param songTitle
     @param inappropWordList : list of inappropriate words
@@ -79,6 +78,8 @@ def parseGeniusLyrics(artists: str, songTitle: str, inappropWordList: list[str])
     accessToken = authResponseData['access_token']
     genius = Genius(access_token=accessToken,timeout=5,retries=3)
     song = None
+    #added the join here so that it would not alter artists for if parseLyristLyrics() needs the formatted string
+    artists = ' '.join(artists)
     try:
         song = genius.search_song(title=songTitle,artist=artists,get_full_info=False)
     except:
@@ -95,7 +96,6 @@ def parseGeniusLyrics(artists: str, songTitle: str, inappropWordList: list[str])
 def parseAZLyrics(artists: str, songTitle: str,inappropWordList: list[str]):
     """
     Looks through inappropriate word list and determines if any appear in the lyrics retrieved from the AZ Lyrics API
-
     @param artists : artist names
     @param songTitle
     @param inappropWordList : list of inappropriate words
@@ -103,6 +103,8 @@ def parseAZLyrics(artists: str, songTitle: str,inappropWordList: list[str]):
     """
     
     api = azapi.AZlyrics()
+    #added the join here so that it would not alter artists for if parseLyristLyrics() needs the formatted string
+    artists = ' '.join(artists)
     api.artist=artists
     api.title=songTitle
     lyrics=api.getLyrics()
@@ -124,6 +126,48 @@ def parseYTTranscript(data,inappropWordList):
                 if word in blurb['text']:
                     return True
         return data['contentDetails']['videoId']
+    #later do except (error name) for language unavailable errors and other recoverable errors
     except:
         return None
-    
+
+def findAndParseLyrics(artists, songTitle, appropSongIDs, id):
+    artistsFormatted, songTitleFormatted = [], ''
+    inappropWordList = getInappropWordList("InappropriateWords.txt")
+    songInapprop = None
+    #number for how many lyric parsing functions return None
+    numNoneRetVals = 0
+    lyricParsers = [parseAZLyrics,parseLyristLyrics,parseGeniusLyrics]
+    global lyricParsersInd
+    while(songInapprop==None):
+        if lyricParsersInd != 1:
+            songInapprop = lyricParsers[lyricParsersInd](artists,songTitle,inappropWordList)
+        else:
+            #can make into format functions
+            if not artistsFormatted:
+                for artist in artists:
+                    artistsTemp = ''
+                    for char in artist:
+                        if char not in '\^~`[]}{|\'\"<>#%/?@!$&=,+;: ':
+                            artistsTemp+=char
+                        else:
+                            artistsTemp+=hex(ord(char))
+                    artistsFormatted.append(artistsTemp)
+                artistsFormatted='%20'.join(artistsFormatted)
+                artistsFormatted = artistsFormatted.replace('0x','%')
+            if not songTitleFormatted:
+                for char in songTitle:
+                    if char not in '\^~`[]}{|\'\"<>#%/?@!$&=,+;: ':
+                        songTitleFormatted+=char
+                    else:
+                        songTitleFormatted+=hex(ord(char))
+                songTitleFormatted=songTitleFormatted.replace('0x','%')
+            songInapprop = lyricParsers[lyricParsersInd](artistsFormatted,songTitleFormatted,inappropWordList)
+        lyricParsersInd=(lyricParsersInd+1)%len(lyricParsers)
+        if songInapprop==None:
+            numNoneRetVals+=1
+            if(numNoneRetVals==len(lyricParsers)):
+                numNoneRetVals=0
+                lyricParsersInd=(lyricParsersInd+1)%len(lyricParsers)
+                break
+        elif songInapprop==False:
+            appropSongIDs.append(id)
