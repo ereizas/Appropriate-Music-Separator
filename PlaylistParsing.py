@@ -1,152 +1,115 @@
 import requests, LyricParsing, config
+import spotipy
+from spotipy.oauth2 import SpotifyOAuth
 import google_auth_oauthlib.flow
 import googleapiclient.discovery
 import googleapiclient.errors
 #Test invalid links given
 
 def getAppropSpotifySongs(link: str)->list[str]:
-    """
-    This function is meant to parse the Spotfiy playlist data to retrieve the Spotify ids for the appropriate songs and update and return an array with those ids.
-    
-    @param link : link to playlist
-    @return appropSongIds : list with string Spotify ids of the appropriate songs in the playlist
-    """
-    playlistID, appropSongIds= '', []
-    authResponse = requests.post('https://accounts.spotify.com/api/token', {
-    'grant_type': 'client_credentials',
-    'client_id':  config.spotifyClientID,
-    'client_secret': config.spotifyClientSecret,
-    })
-    authResponseData = authResponse.json()
-    accessToken = authResponseData['access_token']
-    headers = {'Authorization': 'Bearer {token}'.format(token=accessToken)}
-    #extracts playlist id from the two types of spotify links
-    if('?' in link):
-        playlistID = link[link.index('playlist/')+9:link.index('?')]
-    else:
-        playlistID = link[link.index('playlist/')+9:]
-    response = requests.get('https://api.spotify.com/v1/playlists/'+playlistID+'/tracks',headers=headers)
-    data = response.json()
-    moreSongsLeft = True
-    #var used for reattempting get request for next data for a playlist
-    nextTempLink = ''
-    while(moreSongsLeft):
-        #index for lyricParsers (declared later)
-        lyricParsersInd = 0
-        #reattempting request if data does not have required info
-        if response.status_code==401:
-           authResponse = requests.post('https://accounts.spotify.com/api/token', {
-            'grant_type': 'client_credentials',
-            'client_id':  config.spotifyClientID,
-            'client_secret': config.spotifyClientSecret,
-            })
-           authResponseData = authResponse.json()
-           accessToken = authResponseData['access_token']
-           headers = {'Authorization': 'Bearer {token}'.format(token=accessToken)} 
-        elif 'items' not in data and nextTempLink!='':
-            attempts = 0
-            while attempts<3 and 'items' not in data:
-                response = requests.get(nextTempLink,headers=headers)
-                data = response.json()
-                attempts+=1
-                print(data)
-        for item in data['items']:
-            if not item['track']['explicit']:
-                artists,artistsFormatted, songTitle, songTitleFormatted = [], [], item['track']['name'], ''
-                for artist in item['track']['artists']:
-                    artists.append(artist['name'])
-                    if(artist['name'] not in songTitle):
-                        artistsTemp = ''
-                        for char in artist['name']:
-                            if char not in '\^~`[]}{|\'\"<>#%/?@!$&=,+;:':
-                                artistsTemp+=char
-                            else:
-                                artistsTemp+=hex(ord(char))
-                        artistsTemp.replace("0x","0%")
-                        artistsFormatted.append(artistsTemp)
-                for char in songTitle:
-                    if char not in '\^~`[]}{|\'\"<>#%/?@!$&=,+;:':
-                        songTitleFormatted+=char
-                    else:
-                        songTitleFormatted+=hex(ord(char))
-                songTitleFormatted=songTitleFormatted.replace('0x','0%')
-                inappropWordList = LyricParsing.getInappropWordList("InappropriateWords.txt")
-                songInapprop = None
-                #number for how many lyric parsing functions return None
-                numNoneRetVals = 0
-                lyricParsers = [LyricParsing.parseAZLyrics,LyricParsing.parseLyristLyrics,LyricParsing.parseGeniusLyrics]
-                artistsFormatted='%20'.join(artistsFormatted)
-                artists=' '.join(artists)
-                while(songInapprop==None):
-                    if lyricParsersInd<2:
-                        songInapprop = lyricParsers[lyricParsersInd](artistsFormatted,songTitleFormatted,inappropWordList)
-                    else:
-                        songInapprop = lyricParsers[lyricParsersInd](artists,songTitle,inappropWordList)
-                    lyricParsersInd=(lyricParsersInd+1)%len(lyricParsers)
-                    if songInapprop==None:
-                        numNoneRetVals+=1
-                        if(numNoneRetVals==len(lyricParsers)):
-                            numNoneRetVals=0
-                            lyricParsersInd=(lyricParsersInd+1)%len(lyricParsers)
-                            break
-                    elif songInapprop==False:
-                        appropSongIds.append(item['track']['id'])
-                        numNoneRetVals=0
-                    else:
-                        numNoneRetVals=0
-        if(data['next']!=None):
-            nextTempLink = data['next']
-            response = requests.get(data['next'],headers=headers)
-            data=response.json()
-        else:
-            moreSongsLeft=False
-    return appropSongIds
+	"""
+	This function is meant to parse the Spotfiy playlist data to retrieve the Spotify ids for the appropriate songs and update and return an array with those ids.
+	
+	@param link : link to playlist
+	@return appropSongIds : list with string Spotify ids of the appropriate songs in the playlist
+	"""
+	playlistID, appropSongIds= '', []
+	token = SpotifyOAuth(client_id=config.spotifyClientID,client_secret=config.spotifyClientSecret,scope="playlist-read-private",redirect_uri="https://localhost:8080/callback")
+	spotifyObj = spotipy.Spotify(auth_manager=token)
+	#extracts playlist id from the two types of spotify links
+	if('?' in link):
+		playlistID = link[link.index('playlist/')+9:link.index('?')]
+	else:
+		playlistID = link[link.index('playlist/')+9:]
+	#response = requests.get('https://api.spotify.com/v1/playlists/'+playlistID+'/tracks',headers=headers)
+	data = spotifyObj.playlist_tracks(playlistID,fields=any)
+	moreSongsLeft = True
+	#var used for reattempting get request for next data for a playlist
+	nextTempLink = ''
+	while(moreSongsLeft):
+		#reattempting request if data does not have required info
+		if 'error' in data and data['error']['status']==401:
+			token = SpotifyOAuth(client_id=config.spotifyClientID,client_secret=config.spotifyClientSecret,scope="playlist-read-private",redirect_uri="https://localhost:8080/callback")
+			spotifyObj = spotipy.Spotify(auth_manager=token)
+			'''authResponse = requests.post('https://accounts.spotify.com/api/token', {
+			'grant_type': 'client_credentials',
+			'client_id':  config.spotifyClientID,
+			'client_secret': config.spotifyClientSecret,
+			})
+		   authResponseData = authResponse.json()
+		   accessToken = authResponseData['access_token']
+		   headers = {'Authorization': 'Bearer {token}'.format(token=accessToken)} '''
+		elif 'items' not in data:
+			attempts = 0
+			while attempts<3 and 'items' not in data:
+				data = spotifyObj.playlist_tracks(playlistID,fields=any)
+				attempts+=1
+				print(data)
+		try:
+			for item in data['items']:
+				if not item['track']['explicit']:
+					artists, songTitle = [], item['track']['name']
+					for artist in item['track']['artists']:
+						if(artist['name'] not in songTitle):
+							artists.append(artist['name'])
+					LyricParsing.findAndParseLyrics(artists,songTitle,appropSongIds,item['track']['id'])
+			if(data['next']!=None):
+				nextTempLink = data['next']
+				#check if this works
+				data= spotifyObj.next(data) #playlist_tracks(playlistID,fields=any)
+			else:
+				moreSongsLeft=False
+		except:
+			print(data)
+	return appropSongIds
 
+#try to find lyrics first and then YT transcript as last resort
 def getAppropYTSongs(link):
-    #given a playlist link from either a specific video on the list (which means extra data in the link) or just the playlist itself, lastAmpInd will be the needed end index for playlistID
-    lastAmpInd = link.rfind('&')
-    listEqInd = link.find('list=')
-    if(lastAmpInd<listEqInd):
-        lastAmpInd = len(link)
-    playlistID = link[link.index('list=')+5:lastAmpInd]
-    flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
-    'client_secret.apps.googleusercontent.com.json', 'https://www.googleapis.com/auth/youtube.readonly')
-    credentials = flow.run_local_server()
-    youtube = googleapiclient.discovery.build('youtube', 'v3', credentials=credentials)
-    numResults = 50
-    nextPageToken = ''
-    inappropWordList = LyricParsing.getInappropWordList("InappropriateWords.txt")
-    appropSongIDs = []
-    #While the results returned by the current request is greater than or equal to 50 (the max number of results that can be returned), the program will keep requesting transcripts
-    while numResults>=50:
-        request = youtube.playlistItems().list(
-            part="contentDetails",
-            maxResults=50,
-            playlistId=playlistID,
-            pageToken = nextPageToken
-        )
-        response = request.execute()
-        numResults = response['pageInfo']['totalResults']
-        for item in response['items']:
-            parseYTTranscrRetVal = LyricParsing.parseYTTranscript(item,inappropWordList)
-            if type(parseYTTranscrRetVal)==str:
-                appropSongIDs.append(parseYTTranscrRetVal)
-        if 'nextPageToken' in response:
-            nextPageToken=response['nextPageToken']
-    print(appropSongIDs)
-        
+	#given a playlist link from either a specific video on the list (which means extra data in the link) or just the playlist itself, lastAmpInd will be the needed end index for playlistID
+	lastAmpInd = link.rfind('&')
+	listEqInd = link.find('list=')
+	if(lastAmpInd<listEqInd):
+		lastAmpInd = len(link)
+	playlistID = link[link.index('list=')+5:lastAmpInd]
+	#Must copy file name into first parameter
+	flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
+	'client_secret.apps.googleusercontent.com.json', scopes=['https://www.googleapis.com/auth/youtube.readonly','https://www.googleapis.com/auth/youtube.force-ssl'])
+	credentials = flow.run_local_server()
+	youtube = googleapiclient.discovery.build('youtube', 'v3', credentials=credentials)
+	numResults = 50
+	nextPageToken = ''
+	inappropWordList = LyricParsing.getInappropWordList("InappropriateWords.txt")
+	appropSongIDs = []
+	#While the results returned by the current request is greater than or equal to 50 (the max number of results that can be returned), the program will keep requesting transcripts
+	while numResults>=50:
+		request = youtube.playlistItems().list(
+			part="contentDetails",
+			maxResults=50,
+			playlistId=playlistID,
+			pageToken = nextPageToken
+		)
+		response = request.execute()
+		numResults = response['pageInfo']['totalResults']
+		for item in response['items']:
+			parseYTTranscrRetVal = LyricParsing.parseYTTranscript(item,inappropWordList)
+			if type(parseYTTranscrRetVal)==str:
+				appropSongIDs.append(parseYTTranscrRetVal)
+		if 'nextPageToken' in response:
+			nextPageToken=response['nextPageToken']
+	return [youtube,appropSongIDs]
+		
 def getAppropYTMusicSongs(link):
-    pass
+	pass
 def getAppropSouncloudSongs(link):
-    pass
+	pass
 
 def getAppropPandoraSongs(link):
-    pass
+	pass
 
 def getAppropFolderSongs(link):
-    pass
+	pass
 
 def getAppropM3USongs(link):
-    pass
+	pass
 
-getAppropYTSongs('https://www.youtube.com/watch?v=lKz-2zIhL6I&list=PL3p01WtxiCCr_4fQ70ZbTqKS_6KyBLo7i')
+#getAppropYTSongs('https://www.youtube.com/watch?v=lKz-2zIhL6I&list=PL3p01WtxiCCr_4fQ70ZbTqKS_6KyBLo7i')
