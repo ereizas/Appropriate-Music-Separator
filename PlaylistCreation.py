@@ -27,3 +27,37 @@ def createSpotifyPlaylist(title: str,descrip: str,appropSongIDs: list[str],usern
         return "Check your playlists"
     else:
         return "There are no appropriate songs in the given playlist"
+#start commit
+def createYTPlaylist(ytResource,appropSongIDs,title,descrip,status):
+    
+    #error handle for quota overload
+    requestPlaylistCreate = ytResource.playlists().insert(
+        part="snippet,status",
+        body={
+          "snippet": {
+            "title": title,
+            "description": descrip,
+            "defaultLanguage": "en"
+          },
+          "status": {
+            "privacyStatus": status
+          }
+        }
+    )
+    #error handle for quota overload
+    playlistCreateResponse = requestPlaylistCreate.execute()
+    for id in appropSongIDs:
+        requestPlaylistInsert =  request = ytResource.playlistItems().insert(
+        part="snippet",
+        body={
+          "snippet": {
+            "playlistId": playlistCreateResponse['id'],
+            "position": 0,
+            "resourceId": {
+              "kind": "youtube#video",
+              "videoId": id
+                    }
+                } 
+            }
+        )
+        playlistInsertResponse = requestPlaylistInsert.execute()
