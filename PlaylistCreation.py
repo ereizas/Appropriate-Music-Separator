@@ -27,8 +27,15 @@ def createSpotifyPlaylist(title: str,descrip: str,appropSongIDs: list[str],usern
 	else:
 			return "There are no appropriate songs in the given playlist."
 #start commit
-def createYTPlaylist(ytResource,appropSongIDs,title,descrip,status):
-	
+def createYTPlaylist(ytResource,appropSongIDs:list[str],title:str,descrip:str,status:str):
+	"""
+	This function creates a YouTube playlist and adds videos with the ids listed in appropSongIDs.
+	@param ytResource : YouTube object with the necessary credentials to read, create, and update a playlist
+	@param appropSongIDs : list of ids of YouTube videos that have been determined to be appropriate
+	@param title : title that the user wants the playlist to have
+	@param descrip : description for the playlist that the user desires
+	@param status : string indicating whether the playlist will be public or private
+	"""
 	if(appropSongIDs):
 		#error handle for quota overload
 		requestPlaylistCreate = ytResource.playlists().insert(
@@ -60,7 +67,11 @@ def createYTPlaylist(ytResource,appropSongIDs,title,descrip,status):
 							} 
 					}
 			)
-			playlistInsertResponse = requestPlaylistInsert.execute()
+			try:
+				requestPlaylistInsert.execute()
+			except Exception as e:
+				print(e)
+				pass
 	else:
 		return "There are no appropriate songs in the given playlist."
 		
