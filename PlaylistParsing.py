@@ -31,14 +31,6 @@ def getAppropSpotifySongs(link: str)->list[str]:
 		if 'error' in data and data['error']['status']==401:
 			token = SpotifyOAuth(client_id=config.spotifyClientID,client_secret=config.spotifyClientSecret,scope="playlist-read-private",redirect_uri="https://localhost:8080/callback")
 			spotifyObj = spotipy.Spotify(auth_manager=token)
-			'''authResponse = requests.post('https://accounts.spotify.com/api/token', {
-			'grant_type': 'client_credentials',
-			'client_id':  config.spotifyClientID,
-			'client_secret': config.spotifyClientSecret,
-			})
-		   authResponseData = authResponse.json()
-		   accessToken = authResponseData['access_token']
-		   headers = {'Authorization': 'Bearer {token}'.format(token=accessToken)} '''
 		elif 'items' not in data:
 			attempts = 0
 			while attempts<3 and 'items' not in data:
@@ -52,7 +44,8 @@ def getAppropSpotifySongs(link: str)->list[str]:
 					for artist in item['track']['artists']:
 						if(artist['name'] not in songTitle):
 							artists.append(artist['name'])
-					LyricParsing.findAndParseLyrics(artists,songTitle,appropSongIds,item['track']['id'])
+					#passing artists into an array enforces the perception of artists as being an array
+					LyricParsing.findAndParseLyrics([artists],songTitle,appropSongIds,item['track']['id'])
 			if(data['next']!=None):
 				nextTempLink = data['next']
 				#check if this works
@@ -76,14 +69,13 @@ def getAppropYTSongs(link):
 	'client_secret.apps.googleusercontent.com.json', scopes=['https://www.googleapis.com/auth/youtube.readonly','https://www.googleapis.com/auth/youtube.force-ssl'])
 	credentials = flow.run_local_server()
 	youtube = googleapiclient.discovery.build('youtube', 'v3', credentials=credentials)
+	appropSongIDs = []
 	numResults = 50
 	nextPageToken = ''
-	inappropWordList = LyricParsing.getInappropWordList("InappropriateWords.txt")
-	appropSongIDs = []
 	#While the results returned by the current request is greater than or equal to 50 (the max number of results that can be returned), the program will keep requesting transcripts
 	while numResults>=50:
 		request = youtube.playlistItems().list(
-			part="contentDetails",
+			part="snippet",
 			maxResults=50,
 			playlistId=playlistID,
 			pageToken = nextPageToken
@@ -91,9 +83,22 @@ def getAppropYTSongs(link):
 		response = request.execute()
 		numResults = response['pageInfo']['totalResults']
 		for item in response['items']:
-			parseYTTranscrRetVal = LyricParsing.parseYTTranscript(item,inappropWordList)
-			if type(parseYTTranscrRetVal)==str:
-				appropSongIDs.append(parseYTTranscrRetVal)
+			vidTitle = item['snippet']['title']
+			artists = ''
+			songTitle = ''
+			if ' - ' in vidTitle:
+				artists = vidTitle[:vidTitle.find(' - ')]
+				#determines where to cut off the title of song based on the video title 
+				specStrFirstOccurArr = [vidTitle.find('feat.'),vidTitle.find('ft.'),vidTitle.find('('),vidTitle.find('[')]
+				endIndForSongTitleStr = len(vidTitle)+1
+				for potentialInd in specStrFirstOccurArr:
+					if potentialInd > 0 and potentialInd < endIndForSongTitleStr:
+						endIndForSongTitleStr=potentialInd
+				songTitle = vidTitle[vidTitle.find(' - ')+3:endIndForSongTitleStr-1]
+				print(artists + ' - ' + songTitle)
+			else:
+				songTitle = vidTitle
+			LyricParsing.findAndParseLyrics([artists],songTitle,appropSongIDs,item['snippet']['resourceId']['videoId'],youtube)
 		if 'nextPageToken' in response:
 			nextPageToken=response['nextPageToken']
 	return [youtube,appropSongIDs]
