@@ -50,6 +50,7 @@ def parseLyristLyrics(strArtists: str,songTitleFormatted: str,inappropWordList: 
             print("Retrieved Lyrist Lyrics")
             for word in inappropWordList:
                 if word in lyrics:
+                    print(word)
                     return True
             return False
         else:
@@ -88,6 +89,7 @@ def parseGeniusLyrics(artists: str, songTitle: str, inappropWordList: list[str])
         print("Retrieved Genius Lyrics")
         for word in inappropWordList:
             if word in song.lyrics:
+                print(word)
                 return True
         return False
     else:
@@ -112,25 +114,26 @@ def parseAZLyrics(artists: str, songTitle: str,inappropWordList: list[str]):
         print("Retrieved AZ Lyrics")
         for word in inappropWordList:
             if word in lyrics:
+                print(word)
                 return True
         return False
     else:
         return None 
 
-def parseYTTranscript(data,inappropWordList):
+def parseYTTranscript(id,inappropWordList):
     #figure out how to handle errors with the transcript library
     try:
-        transcript = YouTubeTranscriptApi.get_transcript(data['contentDetails']['videoId'])
+        transcript = YouTubeTranscriptApi.get_transcript(id)
         for word in inappropWordList:
             for blurb in transcript:
                 if word in blurb['text']:
                     return True
-        return data['contentDetails']['videoId']
+        return False
     #later do except (error name) for language unavailable errors and other recoverable errors
     except:
         return None
 
-def findAndParseLyrics(artists, songTitle, appropSongIDs, id):
+def findAndParseLyrics(artists, songTitle, appropSongIDs, id, ytResource):
     artistsFormatted, songTitleFormatted = [], ''
     inappropWordList = getInappropWordList("InappropriateWords.txt")
     songInapprop = None
@@ -170,4 +173,9 @@ def findAndParseLyrics(artists, songTitle, appropSongIDs, id):
                 lyricParsersInd=(lyricParsersInd+1)%len(lyricParsers)
                 break
         elif songInapprop==False:
+            appropSongIDs.append(id)
+            return
+    if ytResource:
+        parseYTTranscrRetVal = parseYTTranscript(id,inappropWordList)
+        if parseYTTranscrRetVal==False:
             appropSongIDs.append(id)
