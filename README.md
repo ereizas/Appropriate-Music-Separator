@@ -6,7 +6,8 @@ This program is meant to take in a music playlist link or file with one or more 
 
 Certain setups need to be completed before you run the program.
 
-1. If you are inputting a Spotify playlist, go through the "Genius Lyric API Setup" and "Spotify Setup"
+1. If you inputting a Spotify or YouTube playlist, go through the Genius Lyric API Setup
+2. For each type of playlist you desire to input and create, go to the corresponding setup section (i.e. Spotify Setup for Spotify playlist input and creation)
 
 ## Genius Lyric API Setup
 
@@ -20,7 +21,7 @@ This is what allows the program to request lyrics from Genius to analyze and pic
 
 ## Spotify Setup
 
-You can skip steps 1-5 if you are **not** on a Windows machine. These steps are necessary in order to get some required info to put into the program.
+You can skip steps 1-5 if you are **not** on a Windows machine. These steps are necessary in order to get some required info to put into the program. The Spotify playlist creation may take about 1.5 to 7 times the amount of songs not marked explicit in the playlist in seconds. For example, if you have 30 songs not marked explicit in your playlist, this program can take about 45 to 210 seconds to finish. This is due to the search times for the APIs I was able to find. *If your playlist is especially long (a few hundred songs most of which do not have explicit labels), then you should go into the settings and make sure your computer does not fall asleep during the duration of the program (you will most likely need to set "Sleep on battery power" and "Sleep on charge" to Never).
 
 1. Press the Windows button (or click on the search bar in the bottom left corner of your home screen)
 2. Search "Control Panel" and click on the app
@@ -38,3 +39,32 @@ You can skip steps 1-5 if you are **not** on a Windows machine. These steps are 
 14. Go back to the dashboard if not already there, click on the app you created, and click on "Settings" in the upper right area of the screen
 15. Copy the Client ID and paste it into the single quote marks next to spotifyClientID in the config.py file you downloaded
 16. Click view Client Secret and do the same as the last step but for the single quote marks next to spotifyClientSecret
+
+## Youtube Setup
+
+It is important to note that YouTube's API limits playlist creation and addition a lot since it costs more quota points. To clarify, every hour you get a quota of 10,000 points. Requesting the information for every 50 songs from a playlist costs 1 point each, creating a playlist costs 50, and adding one song to the playlist costs 50. So for a playlist with 200 songs, 4 points would be used for requesting the playlist information and 50 would be used for creating a playlist which leaves us with 9946 points. This only allows for 198 of the songs to be added. If there are more songs to be added after the quota is reached, you will be given the option to wait an hour for the quota to refill or to receive links of the songs to be added.
+
+1. Go to https://console.cloud.google.com/apis/credentials?authuser=1 and make sure you are logged in to Google
+2. Click check box next to "I agree to the Google Cloud Platform Terms of Service , and the terms of service of any applicable services and APIs." and click "Agree and Continue"
+3. Click on "Create Project" on the upper right portion of the screen
+4. Name the project whatever you like and click "Create Project"
+5. Click "Configure Consent Screen" in the upper right 
+6. Click the bubble next to "External" and click "Create"
+7. Type something for the App name that makes sense to you like "Appropriate Music Separator". When you run the app, you will see a site from Google pop up saying something like "Appropriate Music Separator wants access to your Google Account. Select what Appropriate Music Separator can ccess." You will have to select the first checkbox which should automatically check all the boxes. Then click "Continue" and then "Allow.
+8. Select your email for User support email (you can send in any issues you have in the github page, this is just to set up the app on your computer), and scroll down and enter the same email for Developer contact information
+9. Click "Save and Continue" twice in a row to arrive at the "Test users" section
+10. Click "Add Users", enter your email, click "Add", and click "Save and Continue"
+11. Scroll down and click the "Credentials" tab on the left side of the screen
+12. Click "Create Credentials" (top left) and then OAuth client ID
+13. From the Application type dropdown, select "Desktop app", and enter whatever name you would like. As you can see by the warning the YouTube part of the app may not work until 5 minutes to an hour after this.
+14. Click "Create" and then download JSON
+15. Move the JSON file to the folder/directory where the main files of the project are
+16. Copy the name of the downloaded file and paste it into the single quote marks near googleClientSecretFileName in the config.py file
+17. Click the Enabled APIs & Services tab on the left
+18. Search for "YouTube Data API v3" or scroll down, and click on it under the YouTube section
+19. Click "Enable"
+
+
+# Ideas for Future Features
+
+Translation Capability
