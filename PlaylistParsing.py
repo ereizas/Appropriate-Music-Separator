@@ -4,7 +4,9 @@ from spotipy.oauth2 import SpotifyOAuth
 import google_auth_oauthlib.flow
 import googleapiclient.discovery
 import googleapiclient.errors
+import time
 #Test invalid links given
+#add feature to check if all songs are appropriate, then don't create new playlist
 
 def getAppropSpotifySongs(link:str)->list[str]:
 	"""
@@ -16,7 +18,7 @@ def getAppropSpotifySongs(link:str)->list[str]:
 	if 'spotify' not in link:
 		return 'Not a valid Spotify link'
 	playlistID, appropSongIds= '', []
-	token = SpotifyOAuth(client_id=config.spotifyClientID,client_secret=config.spotifyClientSecret,scope="playlist-read-private",redirect_uri="https://localhost:8080/callback")
+	token = SpotifyOAuth(client_id=config.spotifyClientID,client_secret=config.spotifyClientSecret,scope="playlist-read-private",redirect_uri="https://localhost:8080/callback",username=config.spotifyUserID)
 	spotifyObj = spotipy.Spotify(auth_manager=token)
 	#extracts playlist id from the two types of spotify links
 	if('?' in link):
@@ -27,30 +29,29 @@ def getAppropSpotifySongs(link:str)->list[str]:
 	#while there are more songs in the playlist to get data from
 	while(data['next']):
 		#refreshes access token if it has expired
-		if 'error' in data and data['error']['status']==401:
-			token = SpotifyOAuth(client_id=config.spotifyClientID,client_secret=config.spotifyClientSecret,scope="playlist-read-private",redirect_uri="https://localhost:8080/callback")
+		token_info = token.cache_handler.get_cached_token()
+		#checks if token expired or is going to expire in a minute and refreshes if so
+		if token.is_token_expired(token_info):
+			token = SpotifyOAuth(client_id=config.spotifyClientID,client_secret=config.spotifyClientSecret,scope="playlist-read-private",redirect_uri="https://localhost:8080/callback",username=config.spotifyUserID)
 			spotifyObj = spotipy.Spotify(auth_manager=token)
 		#for other errors, retries three times
-		elif 'items' not in data:
+		if 'items' not in data:
 			attempts = 0
-			while attempts<3 and 'items' not in data:
+			while 'items' not in data and attempts<3:
 				data = spotifyObj.playlist_tracks(playlistID,fields=any)
 				attempts+=1
 				print(data)
-		try:
-			for item in data['items']:
-				if not item['track']['explicit']:
-					artists, songTitle = [], item['track']['name']
-					for artist in item['track']['artists']:
-						#prevents featured artists mentioned in song title from being repeated
-						if(artist['name'] not in songTitle):
-							artists.append(artist['name'])
-					#passing artists into an array enforces the perception of artists as being an array
-					LyricParsing.findAndParseLyrics(artists,songTitle,appropSongIds,item['track']['id'],'')
-			data = spotifyObj.next(data)
-		except Exception as e:
-			print(e)
-			break
+		for item in data['items']:
+			if not item['track']['explicit']:
+				artists, songTitle = [], item['track']['name']
+				for artist in item['track']['artists']:
+					#prevents featured artists mentioned in song title from being repeated
+					if(artist['name'] not in songTitle):
+						artists.append(artist['name'])
+				#passing artists into an array enforces the perception of artists as being an array
+				LyricParsing.findAndParseLyrics(artists,songTitle,appropSongIds,item['track']['id'],'')
+		data = spotifyObj.next(data)
+		
 	return appropSongIds
 
 #try to find lyrics first and then YT transcript as last resort
@@ -79,6 +80,7 @@ def getAppropYTSongs(link:str)->list[str]:
 	#initialized to 50 to allow the loop to run, reassigned later
 	numResults = 50
 	nextPageToken = ''
+	timeOfFirstReq = 0
 	#While the results returned by the current request is greater than or equal to 50 (the max number of results that can be returned), the program will keep requesting transcripts
 	while numResults>=50:
 		request = youtube.playlistItems().list(
@@ -87,6 +89,8 @@ def getAppropYTSongs(link:str)->list[str]:
 			playlistId=playlistID,
 			pageToken = nextPageToken
 		)
+		if not timeOfFirstReq:
+			timeOfFirstReq=time.time()
 		response = request.execute()
 		numResults = response['pageInfo']['totalResults']
 		for item in response['items']:
@@ -102,14 +106,13 @@ def getAppropYTSongs(link:str)->list[str]:
 					if potentialInd > 0 and potentialInd < endIndForSongTitleStr:
 						endIndForSongTitleStr=potentialInd
 				songTitle = vidTitle[vidTitle.find(' - ')+3:endIndForSongTitleStr-1]
-				print(artists + ' - ' + songTitle)
 			else:
 				#if video title is not in standard format of "Artist Name - Song Title", then default to info below which should be more favorable for api searches
 				songTitle = vidTitle
 			LyricParsing.findAndParseLyrics([artists],songTitle,appropSongIDs,item['snippet']['resourceId']['videoId'],youtube)
 		if 'nextPageToken' in response:
 			nextPageToken=response['nextPageToken']
-	return youtube,appropSongIDs
+	return youtube,appropSongIDs,timeOfFirstReq
 		
 def getAppropYTMusicSongs(link):
 	pass
