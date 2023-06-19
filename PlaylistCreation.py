@@ -1,6 +1,9 @@
 import config
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
+import googleapiclient.discovery
+import googleapiclient.errors
+import time
 def createSpotifyPlaylist(title: str,descrip: str,appropSongIDs: list[str],username: str):
 	"""
 	This function creates the child-appropriate Spotify playlists and adds the songs with the IDs indcated in appropSongIDs.
@@ -65,7 +68,20 @@ def createYTPlaylist(ytResource,appropSongIDs:list[str],title:str,descrip:str,st
 		#shown to user to help determine if they would like to wait for the quota to refill and the program
 		numSongsAdded = 0
 		#error handle for quota overload
-		playlistCreateResponse = requestPlaylistCreate.execute()
+		try:
+			playlistCreateResponse = requestPlaylistCreate.execute()
+		except googleapiclient.errors.HttpError as error:
+			if 'quota' in error._get_reason():
+				if waitForQuotaRefill:
+					time.sleep(3600.1-(time.time()-timeOfFirstReq))
+					try:
+						request.execute()
+					except Exception as e:
+						print(e)
+						exit(1)
+			else:
+				print(error)
+				exit(1)
 		for id in appropSongIDs:
 			requestPlaylistInsert =  request = ytResource.playlistItems().insert(
 			part="snippet",
@@ -83,6 +99,21 @@ def createYTPlaylist(ytResource,appropSongIDs:list[str],title:str,descrip:str,st
 			try:
 				requestPlaylistInsert.execute()
 				numSongsAdded+=1
+			except googleapiclient.errors.HttpError as error:
+				if 'quota' in error._get_reason():
+					if waitForQuotaRefill:
+						time.sleep(3600.1-(time.time()-timeOfFirstReq))
+						try:
+							request.execute()
+						except Exception as e:
+							print(e)
+							exit(1)
+					else:
+						#returns links to the videos left to add to the playlist
+						return ['https://youtube.com/watch?v='+id for id in appropSongIDs]
+				else:
+					print(error)
+					exit(1)
 			except Exception as e:
 				print(e)
 				pass

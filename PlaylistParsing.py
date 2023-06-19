@@ -55,12 +55,14 @@ def getAppropSpotifySongs(link:str)->list[str]:
 	return appropSongIds
 
 #try to find lyrics first and then YT transcript as last resort
-def getAppropYTSongs(link:str)->list[str]:
+def getAppropYTSongs(link:str,waitForQuotaRefill:bool)->list[str]:
 	"""
 	This function parses the songs in a YouTube playlist and returns the ids of those songs that are appropriate for children.
 	@param link : link to YouTube playlist
+	@param waitForQuotaRefill : boolean indicating whether the user wants to wait for the quota to get refilled
 	@return youtube : resource object with necessary credentials stored to read, create and update playlists
 	@return appropSongIDs : list of YouTube ids for videos deemed appropriate for children by the program
+	@return timeOfFirstReq : time in UTC for when the first request was made
 	"""
 
 	if 'youtube' not in link:
@@ -91,7 +93,20 @@ def getAppropYTSongs(link:str)->list[str]:
 		)
 		if not timeOfFirstReq:
 			timeOfFirstReq=time.time()
-		response = request.execute()
+		try:
+			response = request.execute()
+		except googleapiclient.errors.HttpError as error:
+			if 'quota' in error._get_reason():
+				if waitForQuotaRefill:
+					time.sleep(3600.1-(time.time()-timeOfFirstReq))
+					try:
+						response = request.execute()
+					except Exception as e:
+						print(e)
+						exit(1)
+			else:
+				print(error)
+				exit(1)
 		numResults = response['pageInfo']['totalResults']
 		for item in response['items']:
 			vidTitle = item['snippet']['title']
