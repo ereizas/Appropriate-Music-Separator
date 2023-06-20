@@ -5,6 +5,7 @@ import google_auth_oauthlib.flow
 import googleapiclient.discovery
 import googleapiclient.errors
 import time
+from ytmusicapi import YTMusic
 #Test invalid links given
 #add feature to check if all songs are appropriate, then don't create new playlist
 
@@ -54,6 +55,14 @@ def getAppropSpotifySongs(link:str)->list[str]:
 		
 	return appropSongIds
 
+def getYTPlaylistID(link:str):
+	#given a playlist link from either a specific video on the list (which means the video id is in the playlist link) or just the playlist itself, lastAmpInd will be the needed end index for playlistID
+	lastInd = link.rfind('&')
+	listEqInd = link.find('list=')
+	if(lastInd<listEqInd):
+		lastInd = len(link)
+	return link[listEqInd+5:lastInd]
+
 #try to find lyrics first and then YT transcript as last resort
 def getAppropYTSongs(link:str,waitForQuotaRefill:bool):
 	"""
@@ -67,12 +76,6 @@ def getAppropYTSongs(link:str,waitForQuotaRefill:bool):
 
 	if 'youtube' not in link:
 		return 'Not a valid YouTube link','',''
-	#given a playlist link from either a specific video on the list (which means the video id is in the playlist link) or just the playlist itself, lastAmpInd will be the needed end index for playlistID
-	lastAmpInd = link.rfind('&')
-	listEqInd = link.find('list=')
-	if(lastAmpInd<listEqInd):
-		lastAmpInd = len(link)
-	playlistID = link[link.index('list=')+5:lastAmpInd]
 	#Must copy file name into first parameter
 	flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
 	config.googleClientSecretFileName, scopes=['https://www.googleapis.com/auth/youtube.readonly','https://www.googleapis.com/auth/youtube.force-ssl'])
@@ -86,7 +89,7 @@ def getAppropYTSongs(link:str,waitForQuotaRefill:bool):
 		request = youtube.playlistItems().list(
 			part="snippet",
 			maxResults=50,
-			playlistId=playlistID,
+			playlistId=getYTPlaylistID(link),
 			pageToken = nextPageToken
 		)
 		if not timeOfFirstReq:
@@ -128,8 +131,9 @@ def getAppropYTSongs(link:str,waitForQuotaRefill:bool):
 			nextPageToken=response['nextPageToken']
 	return youtube,appropSongIDs,timeOfFirstReq
 		
-def getAppropYTMusicSongs(link):
+def getAppropYTMusicSongs(link:str):
 	pass
+
 def getAppropSouncloudSongs(link):
 	pass
 
