@@ -55,7 +55,7 @@ def getAppropSpotifySongs(link:str)->list[str]:
 	return appropSongIds
 
 #try to find lyrics first and then YT transcript as last resort
-def getAppropYTSongs(link:str,waitForQuotaRefill:bool)->list[str]:
+def getAppropYTSongs(link:str,waitForQuotaRefill:bool):
 	"""
 	This function parses the songs in a YouTube playlist and returns the ids of those songs that are appropriate for children.
 	@param link : link to YouTube playlist
@@ -66,7 +66,7 @@ def getAppropYTSongs(link:str,waitForQuotaRefill:bool)->list[str]:
 	"""
 
 	if 'youtube' not in link:
-		return 'Not a valid YouTube link'
+		return 'Not a valid YouTube link','',''
 	#given a playlist link from either a specific video on the list (which means the video id is in the playlist link) or just the playlist itself, lastAmpInd will be the needed end index for playlistID
 	lastAmpInd = link.rfind('&')
 	listEqInd = link.find('list=')
@@ -79,12 +79,10 @@ def getAppropYTSongs(link:str,waitForQuotaRefill:bool)->list[str]:
 	credentials = flow.run_local_server()
 	youtube = googleapiclient.discovery.build('youtube', 'v3', credentials=credentials)
 	appropSongIDs = []
-	#initialized to 50 to allow the loop to run, reassigned later
-	numResults = 50
 	nextPageToken = ''
 	timeOfFirstReq = 0
-	#While the results returned by the current request is greater than or equal to 50 (the max number of results that can be returned), the program will keep requesting transcripts
-	while numResults>=50:
+	response = 'nextPageToken'
+	while 'nextPageToken' in response:
 		request = youtube.playlistItems().list(
 			part="snippet",
 			maxResults=50,
@@ -107,7 +105,6 @@ def getAppropYTSongs(link:str,waitForQuotaRefill:bool)->list[str]:
 			else:
 				print(error)
 				exit(1)
-		numResults = response['pageInfo']['totalResults']
 		for item in response['items']:
 			vidTitle = item['snippet']['title']
 			artists = ''
@@ -116,14 +113,16 @@ def getAppropYTSongs(link:str,waitForQuotaRefill:bool)->list[str]:
 				artists = vidTitle[:vidTitle.find(' - ')]
 				#determines where to cut off the title of song based on the video title 
 				specStrFirstOccurArr = [vidTitle.find('feat.'),vidTitle.find('ft.'),vidTitle.find('('),vidTitle.find('[')]
+				hyphenInd = vidTitle.find('-')
 				endIndForSongTitleStr = len(vidTitle)+1
 				for potentialInd in specStrFirstOccurArr:
-					if potentialInd > 0 and potentialInd < endIndForSongTitleStr:
+					if potentialInd > hyphenInd and potentialInd < endIndForSongTitleStr:
 						endIndForSongTitleStr=potentialInd
 				songTitle = vidTitle[vidTitle.find(' - ')+3:endIndForSongTitleStr-1]
 			else:
 				#if video title is not in standard format of "Artist Name - Song Title", then default to info below which should be more favorable for api searches
 				songTitle = vidTitle
+			print(artists + ' - ' + songTitle)
 			LyricParsing.findAndParseLyrics([artists],songTitle,appropSongIDs,item['snippet']['resourceId']['videoId'],youtube)
 		if 'nextPageToken' in response:
 			nextPageToken=response['nextPageToken']
