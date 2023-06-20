@@ -43,20 +43,17 @@ def parseLyristLyrics(strArtists: str,songTitleFormatted: str,inappropWordList: 
 
     response = requests.get('https://lyrist.vercel.app/api/' + songTitleFormatted + '/' + strArtists)
     lyrics = ''
-    if(response.status_code==200):
+    if(response.status_code>199 and response.status_code<300):
         data = response.json()
         if('lyrics' in data):
             lyrics=data['lyrics']
-            print("Retrieved Lyrist Lyrics")
             for word in inappropWordList:
                 if word in lyrics:
                     return True
             return False
         else:
-            print("Could not retrieve lyric data")
             return None
     else:
-        print("Error in retrieving lyric data")
         return None
         
 def parseGeniusLyrics(artists: list, songTitle: str, inappropWordList: list[str]):
@@ -76,7 +73,7 @@ def parseGeniusLyrics(artists: list, songTitle: str, inappropWordList: list[str]
     })
     authResponseData = authResponse.json()
     accessToken = authResponseData['access_token']
-    genius = Genius(access_token=accessToken,timeout=5,retries=3)
+    genius = Genius(access_token=accessToken,timeout=5,retries=3,verbose=False)
     song = None
     #added the join here so that it would not alter artists for if parseLyristLyrics() needs the formatted string
     artists = ' '.join(artists)
@@ -86,7 +83,6 @@ def parseGeniusLyrics(artists: list, songTitle: str, inappropWordList: list[str]
         print(e)
         pass
     if(song!=None):
-        print("Retrieved Genius Lyrics")
         for word in inappropWordList:
             if word in song.lyrics:
                 return True
@@ -108,15 +104,18 @@ def parseAZLyrics(artists: list, songTitle: str,inappropWordList: list[str]):
     artists = ' '.join(artists)
     api.artist=artists
     api.title=songTitle
-    lyrics=api.getLyrics()
-    if type(lyrics) is not int:
-        print("Retrieved AZ Lyrics")
-        for word in inappropWordList:
-            if word in lyrics:
-                return True
-        return False
-    else:
-        return None 
+    try:
+        lyrics=api.getLyrics()
+        if type(lyrics) != int:
+            for word in inappropWordList:
+                if word in lyrics:
+                    return True
+            return False
+        else:
+            return None 
+    except Exception as e:
+        print(e)
+        return None
 
 def parseYTTranscript(id:str, inappropWordList:list[str]):
     """
@@ -201,9 +200,7 @@ def findAndParseLyrics(artists:list, songTitle:str, appropSongIDs:list, id:str, 
         lyricParsersInd=(lyricParsersInd+1)%len(lyricParsers)
         if songInapprop==False:
             appropSongIDs.append(id)
-            #completes the function so that that parseYTTranscript() won't be called unnecessarily
-            return
-    if ytResource:
+    if songInapprop==None and ytResource:
         parseYTTranscrRetVal = parseYTTranscript(id,inappropWordList)
         if parseYTTranscrRetVal==False:
             appropSongIDs.append(id)
