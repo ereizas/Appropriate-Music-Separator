@@ -1,4 +1,4 @@
-import LyricParsing, config
+import LyricParsing, config, StrParsing
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import google_auth_oauthlib.flow
@@ -44,24 +44,14 @@ def getAppropSpotifySongs(link:str)->list[str]:
 				print(data)
 		for item in data['items']:
 			if not item['track']['explicit']:
-				artists, songTitle = [], item['track']['name']
-				for artist in item['track']['artists']:
-					#prevents featured artists mentioned in song title from being repeated
-					if(artist['name'] not in songTitle):
-						artists.append(artist['name'])
+				songTitle = item['track']['name']
+				#conditional in list comprehension prevents featured artists mentioned in the song title from being repeated
+				artists = [artist['name'] for artist in item['track']['artists'] if artist['name'] not in songTitle]
 				#passing artists into an array enforces the perception of artists as being an array
 				LyricParsing.findAndParseLyrics(artists,songTitle,appropSongIds,item['track']['id'],'')
 		data = spotifyObj.next(data)
 		
 	return appropSongIds
-
-def getYTPlaylistID(link:str):
-	#given a playlist link from either a specific video on the list (which means the video id is in the playlist link) or just the playlist itself, lastAmpInd will be the needed end index for playlistID
-	lastInd = link.rfind('&')
-	listEqInd = link.find('list=')
-	if(lastInd<listEqInd):
-		lastInd = len(link)
-	return link[listEqInd+5:lastInd]
 
 #try to find lyrics first and then YT transcript as last resort
 def getAppropYTSongs(link:str,waitForQuotaRefill:bool):
@@ -89,7 +79,7 @@ def getAppropYTSongs(link:str,waitForQuotaRefill:bool):
 		request = youtube.playlistItems().list(
 			part="snippet",
 			maxResults=50,
-			playlistId=getYTPlaylistID(link),
+			playlistId=StrParsing.getYTPlaylistID(link),
 			pageToken = nextPageToken
 		)
 		if not timeOfFirstReq:
@@ -109,22 +99,18 @@ def getAppropYTSongs(link:str,waitForQuotaRefill:bool):
 				print(error)
 				exit(1)
 		for item in response['items']:
-			vidTitle = item['snippet']['title']
 			artists = ''
-			songTitle = ''
-			if ' - ' in vidTitle:
-				artists = vidTitle[:vidTitle.find(' - ')]
+			songTitle = item['snippet']['title']
+			if ' - ' in songTitle:
+				artists = songTitle[:songTitle.find(' - ')]
 				#determines where to cut off the title of song based on the video title 
-				specStrFirstOccurArr = [vidTitle.find('feat.'),vidTitle.find('ft.'),vidTitle.find('('),vidTitle.find('[')]
-				hyphenInd = vidTitle.find('-')
-				endIndForSongTitleStr = len(vidTitle)+1
+				specStrFirstOccurArr = [songTitle.find('feat.'),songTitle.find('ft.'),songTitle.find('('),songTitle.find('[')]
+				hyphenInd = songTitle.find('-')
+				endIndForSongTitleStr = len(songTitle)+1
 				for potentialInd in specStrFirstOccurArr:
 					if potentialInd > hyphenInd and potentialInd < endIndForSongTitleStr:
 						endIndForSongTitleStr=potentialInd
-				songTitle = vidTitle[vidTitle.find(' - ')+3:endIndForSongTitleStr-1]
-			else:
-				#if video title is not in standard format of "Artist Name - Song Title", then default to info below which should be more favorable for api searches
-				songTitle = vidTitle
+				songTitle = songTitle[songTitle.find(' - ')+3:endIndForSongTitleStr-1]
 			print(artists + ' - ' + songTitle)
 			LyricParsing.findAndParseLyrics([artists],songTitle,appropSongIDs,item['snippet']['resourceId']['videoId'],youtube)
 		if 'nextPageToken' in response:
@@ -132,7 +118,23 @@ def getAppropYTSongs(link:str,waitForQuotaRefill:bool):
 	return youtube,appropSongIDs,timeOfFirstReq
 		
 def getAppropYTMusicSongs(link:str):
-	pass
+	if 'music.youtube' not in link:
+		return 'Not a valid YouTube Music link'
+	appropSongIDs = []
+	ytmusic = YTMusic('oauth.json')
+	data = ytmusic.get_playlist(StrParsing.getYTPlaylistID(link),limit=None)
+	for track in data['tracks']:
+		artists = [artist for artist in track['artists']]
+		songTitle = track['title']
+		specStrFirstOccurArr = [songTitle.find('feat.'),songTitle.find('ft.'),songTitle.find('('),songTitle.find('[')]
+		endIndForSongTitleStr = len(songTitle)+1
+		for potentialInd in specStrFirstOccurArr:
+					if potentialInd > -1 and potentialInd < endIndForSongTitleStr:
+						endIndForSongTitleStr=potentialInd
+		songTitle = songTitle[:endIndForSongTitleStr]
+		LyricParsing.findAndParseLyrics(artists,songTitle,appropSongIDs,track['videoId'],ytmusic)
+
+getAppropYTMusicSongs('https://music.youtube.com/playlist?list=RDCLAK5uy_mfdqvCAl8wodlx2P2_Ai2gNkiRDAufkkI')
 
 def getAppropSouncloudSongs(link):
 	pass
