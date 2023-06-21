@@ -3,4 +3,5 @@ OriginalInappropWordList.txt
 __pycache__
 .venv
 client_secret.apps.googleusercontent.com.json
-config.py
+oauth.json
+.cache*
