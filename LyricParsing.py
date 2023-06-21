@@ -2,7 +2,7 @@
 Author: Eric Reizas
 This file is meant to provide functions that help determine whether songs are inappropriate for children based on lyrics.
 """
-import requests, config
+import requests, config, StrParsing
 from lyricsgenius import Genius
 import azapi
 from youtube_transcript_api import YouTubeTranscriptApi
@@ -29,8 +29,6 @@ def getInappropWordList(file: str)->list[str]:
                 temp+=lines[line][c]
         inappropWordList.append(temp)
     return inappropWordList
-
-#these functions return a boolean value: true for appropriate, false for not
 
 def parseLyristLyrics(strArtists: str,songTitleFormatted: str,inappropWordList: list[str]):
     """
@@ -137,37 +135,6 @@ def parseYTTranscript(id:str, inappropWordList:list[str]):
         print(e)
         return None
 
-def formatArtists(artists:list[str])->str:
-    """
-    This function formats the artists names in URL format.
-    @param artists
-    """
-    artistsFormatted = []
-    for artist in artists:
-        artistsTemp = ''
-        for char in artist:
-            if char not in '\^~`[]}{|\'\"<>#%/?@!$&=,+;: ':
-                artistsTemp+=char
-            else:
-                artistsTemp+=hex(ord(char))
-        artistsFormatted.append(artistsTemp)
-    #joins artists in the list with space as represented by a URL
-    artistsFormatted='%20'.join(artistsFormatted)
-    return artistsFormatted.replace('0x','%')
-
-def formatSongTitle(songTitle:str)->str:
-    """
-    This function formats the song title in URL format.
-    @param songTitle
-    """
-    songTitleFormatted = ''
-    for char in songTitle:
-        if char not in '\^~`[]}{|\'\"<>#%/?@!$&=,+;: ':
-            songTitleFormatted+=char
-        else:
-            songTitleFormatted+=hex(ord(char))
-    return songTitleFormatted.replace('0x','%')
-
 def findAndParseLyrics(artists:list, songTitle:str, appropSongIDs:list, id:str, ytResource):
     """
     This function cycles through the lyric APIs (and YouTube transcript if none of the APIs can get results) and adds to appropSongIDs if the lyric API functions return False
@@ -192,9 +159,9 @@ def findAndParseLyrics(artists:list, songTitle:str, appropSongIDs:list, id:str, 
         else:
             #can make into format functions
             if not artistsFormatted:
-                artistsFormatted = formatArtists(artists)
+                artistsFormatted = StrParsing.formatArtists(artists)
             if not songTitleFormatted:
-                songTitleFormatted = formatSongTitle(songTitle)
+                songTitleFormatted = StrParsing.formatSongTitle(songTitle)
             songInapprop = lyricParsers[lyricParsersInd](artistsFormatted,songTitleFormatted,inappropWordList)
         #rotates the lyric APIs
         lyricParsersInd=(lyricParsersInd+1)%len(lyricParsers)
