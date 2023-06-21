@@ -14,6 +14,9 @@ def createSpotifyPlaylist(title: str,descrip: str,appropSongIDs: list[str],usern
 	@param username : username of the Spotify user using this program
 	@return : If the playlist contains at least one song, then a message telling the user to check their playlist is returned, otherwise a message indicating that there are no appropriate songs is returned.
 	"""
+
+	if type(appropSongIDs)==str:
+		return "Not a valid Spotify link"
 	if(appropSongIDs):
 			#need clientID and clientSecret from a Spotify account to get an access token required to access the API
 			clientID, clientSecret = config.spotifyClientID,config.spotifyClientSecret
@@ -50,6 +53,9 @@ def createYTPlaylist(ytResource,appropSongIDs:list[str],title:str,descrip:str,st
 	@param waitForQuotaRefill : boolean indicating whether the user would like to wait for a quota refill for the program to add more songs to the playlist
 	@param timeOfFirstReq : float that indicates how much time has passed since the first request to YouTube Data API
 	"""
+
+	if type(appropSongIDs)==str:
+		return 'Not a valid YouTube link'
 	if(appropSongIDs):
 		#error handle for quota overload, use timeOfFirstReq to determine how long to wait
 		requestPlaylistCreate = ytResource.playlists().insert(
