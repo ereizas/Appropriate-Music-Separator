@@ -64,6 +64,14 @@ It is important to note that YouTube's API limits playlist creation and addition
 18. Search for "YouTube Data API v3" or scroll down, and click on it under the YouTube section
 19. Click "Enable"
 
+## YouTube Music Setup
+
+pip install ytmusicapi
+ytmusicapi oauth
+check if codes match
+click on the account you want to use
+press enter back in the terminal/command prompt
+Confirm there is a file called oauth.json in the directory/folder for the program
 
 # Ideas for Future Features
 
