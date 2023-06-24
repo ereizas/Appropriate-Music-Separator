@@ -26,7 +26,8 @@ def getAppropSpotifySongs(link:str)->list[str]:
 		playlistID = link[link.index('playlist/')+9:link.index('?')]
 	else:
 		playlistID = link[link.index('playlist/')+9:]
-	try: #start commit
+	data = dict()
+	try:
 		data = spotifyObj.playlist_tracks(playlistID,fields=any)
 	except Exception as e:
 		print(e)
@@ -62,11 +63,10 @@ def getAppropSpotifySongs(link:str)->list[str]:
 	return appropSongIds
 
 #try to find lyrics first and then YT transcript as last resort
-def getAppropYTSongs(link:str,waitForQuotaRefill:bool):
+def getAppropYTSongs(link:str):
 	"""
 	This function parses the songs in a YouTube playlist and returns the ids of those songs that are appropriate for children.
 	@param link : link to YouTube playlist
-	@param waitForQuotaRefill : boolean indicating whether the user wants to wait for the quota to get refilled
 	@return youtube : resource object with necessary credentials stored to read, create and update playlists
 	@return appropSongIDs : list of YouTube ids for videos deemed appropriate for children by the program
 	@return timeOfFirstReq : time in UTC for when the first request was made
@@ -96,8 +96,14 @@ def getAppropYTSongs(link:str,waitForQuotaRefill:bool):
 			response = request.execute()
 		except googleapiclient.errors.HttpError as error:
 			if 'quota' in error._get_reason():
-				if waitForQuotaRefill:
+				print('Quota limit reached while requesting original playlist info. Answer the following question:')
+				waitAnswer = ''
+				while waitAnswer!='yes' and waitAnswer!='no' and waitAnswer!='Yes' and waitAnswer!='No':
+					waitAnswer=input("Are you okay with the program sleeping for an hour so that the quota can be refilled for the program to continue?Answer 'yes' or 'no'.'")
+				if waitAnswer=='yes' or waitAnswer=='Yes':
+					print("Waiting for an hour.")
 					time.sleep(3600.1-(time.time()-timeOfFirstReq))
+					print("Done waiting.")
 					try:
 						response = request.execute()
 					except Exception as e:
@@ -130,6 +136,7 @@ def getAppropYTMusicSongs(link:str):
 	if 'music.youtube' not in link:
 		return 'Not a valid YouTube Music link'
 	appropSongIDs = []
+	data = dict()
 	ytmusic = YTMusic('oauth.json')
 	try:
 		data = ytmusic.get_playlist(StrParsing.getYTPlaylistID(link),limit=None)
@@ -147,7 +154,7 @@ def getAppropYTMusicSongs(link:str):
 		songTitle = songTitle[:endIndForSongTitleStr]
 		LyricParsing.findAndParseLyrics(artists,songTitle,appropSongIDs,track['videoId'],ytmusic)
 	return appropSongIDs
-#end commit (error handling)
+
 getAppropYTMusicSongs('https://music.youtube.com/playlist?list=RDCLAK5uy_mfdqvCAl8wodlx2P2_Ai2gNkiRDAufkkI')
 
 def getAppropSouncloudSongs(link):
