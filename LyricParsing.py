@@ -17,6 +17,7 @@ def getInappropWordList(file: str)->list[str]:
     """
 
     inappropWordList = []
+    read_file = ''
     try:
         read_file = open(file,"r")
     except Exception as e:
@@ -42,11 +43,12 @@ def parseLyristLyrics(strArtists: str,songTitleFormatted: str,inappropWordList: 
     @param inappropWordList
     @return : None on error, False if none of the words from inappropWordList appear, or True if at least one does
     """
+    repsonse = dict()
     try:
         response = requests.get('https://lyrist.vercel.app/api/' + songTitleFormatted + '/' + strArtists)
     except Exception as e:
         print(e)
-        exit(1)
+        return None
     lyrics = ''
     if(response.status_code>199 and response.status_code<300):
         data = response.json()
@@ -86,7 +88,7 @@ def parseGeniusLyrics(artists: list, songTitle: str, inappropWordList: list[str]
         song = genius.search_song(title=songTitle,artist=artists,get_full_info=False)
     except Exception as e:
         print(e)
-        pass
+        return None
     if(song!=None):
         for word in inappropWordList:
             if word in song.lyrics:
@@ -177,4 +179,4 @@ def findAndParseLyrics(artists:list, songTitle:str, appropSongIDs:list, id:str, 
     if songInapprop==None and ytResource:
         parseYTTranscrRetVal = parseYTTranscript(id,inappropWordList)
         if parseYTTranscrRetVal==False:
-            appropSongIDs.append(id)co
+            appropSongIDs.append(id)
