@@ -41,8 +41,8 @@ def createSpotifyPlaylist(title: str,descrip: str,appropSongIDs: list[str],usern
 			return "Check your playlists"
 	else:
 			return "There are no appropriate songs in the given playlist."
-#implement option to wait for hour or print list of video ids
-def createYTPlaylist(ytResource,appropSongIDs:list[str],title:str,descrip:str,status:str,waitForQuotaRefill:bool,timeOfFirstReq:float):
+#implement option to add to exisiting playlist
+def createYTPlaylist(ytResource,appropSongIDs:list[str],title:str,descrip:str,status:str,timeOfFirstReq:float):
 	"""
 	This function creates a YouTube playlist and adds videos with the ids listed in appropSongIDs.
 	@param ytResource : YouTube object with the necessary credentials to read, create, and update a playlist
@@ -50,7 +50,6 @@ def createYTPlaylist(ytResource,appropSongIDs:list[str],title:str,descrip:str,st
 	@param title : title that the user wants the playlist to have
 	@param descrip : description for the playlist that the user desires
 	@param status : string indicating whether the playlist will be public or private
-	@param waitForQuotaRefill : boolean indicating whether the user would like to wait for a quota refill for the program to add more songs to the playlist
 	@param timeOfFirstReq : float that indicates how much time has passed since the first request to YouTube Data API
 	"""
 
@@ -78,13 +77,21 @@ def createYTPlaylist(ytResource,appropSongIDs:list[str],title:str,descrip:str,st
 			playlistCreateResponse = requestPlaylistCreate.execute()
 		except googleapiclient.errors.HttpError as error:
 			if 'quota' in error._get_reason():
-				if waitForQuotaRefill:
+				print("Lyric analysis completed. Quota limit reached. Answer the following question:")
+				waitAnswer = ''
+				while waitAnswer!='yes' and waitAnswer!='no' and waitAnswer!='Yes' and waitAnswer!='No':
+					waitAnswer=input("Are you okay with the program sleeping for an hour until it requests more data? Answer 'yes' or 'no' (*Note: If you answer no, you will be given the list of video ids for the songs that were deemed appropriate which you can copy and paste when asked to in the next run which must be in at least an hour from now.)")
+				if waitAnswer=='yes' or waitAnswer=='Yes':
+					print("Waiting for an hour.")
 					time.sleep(3600.1-(time.time()-timeOfFirstReq))
+					print("Done waiting.")
 					try:
-						request.execute()
+						requestPlaylistCreate.execute()
 					except Exception as e:
 						print(e)
 						exit(1)
+				else:
+					return appropSongIDs
 			else:
 				print(error)
 				exit(1)
@@ -107,7 +114,11 @@ def createYTPlaylist(ytResource,appropSongIDs:list[str],title:str,descrip:str,st
 				numSongsAdded+=1
 			except googleapiclient.errors.HttpError as error:
 				if 'quota' in error._get_reason():
-					if waitForQuotaRefill:
+					print("Quota limit reached while adding songs to the playlist. Answer the following question:")
+					waitAnswer = ''
+					while waitAnswer!='yes' and waitAnswer!='no' and waitAnswer!='Yes' and waitAnswer!='No':
+						waitAnswer=input("Are you okay with the program sleeping for an hour until it can make more requests to add songs to the playlist? If you answer no, you will receive a list of links to songs that still needed to be added. You can decide to add them yourself or run the program an hour from now and copy and paste it when asked to.")
+					if waitAnswer=='yes' or waitAnswer=='Yes':
 						time.sleep(3600.1-(time.time()-timeOfFirstReq))
 						try:
 							request.execute()
@@ -115,8 +126,8 @@ def createYTPlaylist(ytResource,appropSongIDs:list[str],title:str,descrip:str,st
 							print(e)
 							exit(1)
 					else:
-						#returns links to the videos left to add to the playlist
-						return ['https://youtube.com/watch?v='+id for id in appropSongIDs]
+						#returns links to the videos left to add to the playlist starting at numSongsAdded-1 to avoid repeats
+						return ['https://youtube.com/watch?v='+id for id in appropSongIDs[numSongsAdded-1:]]
 				else:
 					print(error)
 					exit(1)
