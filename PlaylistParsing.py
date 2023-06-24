@@ -26,7 +26,11 @@ def getAppropSpotifySongs(link:str)->list[str]:
 		playlistID = link[link.index('playlist/')+9:link.index('?')]
 	else:
 		playlistID = link[link.index('playlist/')+9:]
-	data = spotifyObj.playlist_tracks(playlistID,fields=any)
+	try: #start commit
+		data = spotifyObj.playlist_tracks(playlistID,fields=any)
+	except Exception as e:
+		print(e)
+		exit(1)
 	#while there are more songs in the playlist to get data from
 	while(data['next']):
 		#refreshes access token if it has expired
@@ -39,7 +43,11 @@ def getAppropSpotifySongs(link:str)->list[str]:
 		if 'items' not in data:
 			attempts = 0
 			while 'items' not in data and attempts<3:
-				data = spotifyObj.playlist_tracks(playlistID,fields=any)
+				try:
+					data = spotifyObj.playlist_tracks(playlistID,fields=any)
+				except Exception as e:
+					print(e)
+					exit(1)
 				attempts+=1
 				print(data)
 		for item in data['items']:
@@ -116,13 +124,18 @@ def getAppropYTSongs(link:str,waitForQuotaRefill:bool):
 		if 'nextPageToken' in response:
 			nextPageToken=response['nextPageToken']
 	return youtube,appropSongIDs,timeOfFirstReq
-		
+
+#check if quota applies
 def getAppropYTMusicSongs(link:str):
 	if 'music.youtube' not in link:
 		return 'Not a valid YouTube Music link'
 	appropSongIDs = []
 	ytmusic = YTMusic('oauth.json')
-	data = ytmusic.get_playlist(StrParsing.getYTPlaylistID(link),limit=None)
+	try:
+		data = ytmusic.get_playlist(StrParsing.getYTPlaylistID(link),limit=None)
+	except Exception as e:
+		print(e)
+		exit(1)
 	for track in data['tracks']:
 		artists = [artist for artist in track['artists']]
 		songTitle = track['title']
@@ -133,7 +146,8 @@ def getAppropYTMusicSongs(link:str):
 						endIndForSongTitleStr=potentialInd
 		songTitle = songTitle[:endIndForSongTitleStr]
 		LyricParsing.findAndParseLyrics(artists,songTitle,appropSongIDs,track['videoId'],ytmusic)
-
+	return appropSongIDs
+#end commit (error handling)
 getAppropYTMusicSongs('https://music.youtube.com/playlist?list=RDCLAK5uy_mfdqvCAl8wodlx2P2_Ai2gNkiRDAufkkI')
 
 def getAppropSouncloudSongs(link):
