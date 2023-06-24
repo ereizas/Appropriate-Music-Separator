@@ -8,7 +8,7 @@ import azapi
 from youtube_transcript_api import YouTubeTranscriptApi
 #declared globally to allow fair cycling and easing of the workload of lyrics apis in findAndParseLyrics()
 lyricParsersInd = 0
-##decrypts the Vigenere cypher and returns a list of the inappropriate words to look for
+#decrypts the Vigenere cypher and returns a list of the inappropriate words to look for
 def getInappropWordList(file: str)->list[str]:
     """
     Decrypts the Vigenere cypher and returns a list of the inappropriate words to look for
@@ -17,7 +17,11 @@ def getInappropWordList(file: str)->list[str]:
     """
 
     inappropWordList = []
-    read_file = open(file,"r")
+    try:
+        read_file = open(file,"r")
+    except Exception as e:
+        print(e)
+        exit(1)
     lines = read_file.readlines()
     for line in range(len(lines)):
         key = "music"
@@ -38,8 +42,11 @@ def parseLyristLyrics(strArtists: str,songTitleFormatted: str,inappropWordList: 
     @param inappropWordList
     @return : None on error, False if none of the words from inappropWordList appear, or True if at least one does
     """
-
-    response = requests.get('https://lyrist.vercel.app/api/' + songTitleFormatted + '/' + strArtists)
+    try:
+        response = requests.get('https://lyrist.vercel.app/api/' + songTitleFormatted + '/' + strArtists)
+    except Exception as e:
+        print(e)
+        exit(1)
     lyrics = ''
     if(response.status_code>199 and response.status_code<300):
         data = response.json()
@@ -170,4 +177,4 @@ def findAndParseLyrics(artists:list, songTitle:str, appropSongIDs:list, id:str, 
     if songInapprop==None and ytResource:
         parseYTTranscrRetVal = parseYTTranscript(id,inappropWordList)
         if parseYTTranscrRetVal==False:
-            appropSongIDs.append(id)
+            appropSongIDs.append(id)co
