@@ -4,6 +4,7 @@ from spotipy.oauth2 import SpotifyOAuth
 import googleapiclient.discovery
 import googleapiclient.errors
 import time
+from StrParsing import getYTPlaylistID
 def createSpotifyPlaylist(title: str,descrip: str,appropSongIDs: list[str],username: str):
 	"""
 	This function creates the child-appropriate Spotify playlists and adds the songs with the IDs indcated in appropSongIDs.
@@ -42,65 +43,71 @@ def createSpotifyPlaylist(title: str,descrip: str,appropSongIDs: list[str],usern
 	else:
 			return "There are no appropriate songs in the given playlist."
 #implement option to add to exisiting playlist
-def createYTPlaylist(ytResource,appropSongIDs:list[str],title:str,descrip:str,status:str,timeOfFirstReq:float):
+def createYTPlaylist(ytResource,appropSongIDs:list[str],link:str,title:str,descrip:str,status:str,timeOfFirstReq:float):
 	"""
 	This function creates a YouTube playlist and adds videos with the ids listed in appropSongIDs.
 	@param ytResource : YouTube object with the necessary credentials to read, create, and update a playlist
 	@param appropSongIDs : list of ids of YouTube videos that have been determined to be appropriate
+	@param link : link for premade playlist or empty string if not given a link
 	@param title : title that the user wants the playlist to have
 	@param descrip : description for the playlist that the user desires
 	@param status : string indicating whether the playlist will be public or private
 	@param timeOfFirstReq : float that indicates how much time has passed since the first request to YouTube Data API
 	"""
-
-	if type(appropSongIDs)==str:
-		return 'Not a valid YouTube link'
+	if type(appropSongIDs)!=list:
+		return 'Invalid link or input for appropSongIDs'
 	if(appropSongIDs):
-		#error handle for quota overload, use timeOfFirstReq to determine how long to wait
-		requestPlaylistCreate = ytResource.playlists().insert(
-			part="snippet,status",
-			body={
-				"snippet": {
-					"title": title,
-					"description": descrip,
-					"defaultLanguage": "en"
-				},
-				"status": {
-					"privacyStatus": status
-				}
-			}
-		)
 		#shown to user to help determine if they would like to wait for the quota to refill and the program
 		numSongsAdded = 0
-		#error handle for quota overload
-		try:
-			playlistCreateResponse = requestPlaylistCreate.execute()
-		except googleapiclient.errors.HttpError as error:
-			if 'quota' in error._get_reason():
-				print("Lyric analysis completed. Quota limit reached. Answer the following question:")
-				waitAnswer = ''
-				while waitAnswer!='yes' and waitAnswer!='no' and waitAnswer!='Yes' and waitAnswer!='No':
-					waitAnswer=input("Are you okay with the program sleeping for an hour until it requests more data? Answer 'yes' or 'no' (*Note: If you answer no, you will be given the list of video ids for the songs that were deemed appropriate which you can copy and paste when asked to in the next run which must be in at least an hour from now.)")
-				if waitAnswer=='yes' or waitAnswer=='Yes':
-					print("Waiting for an hour.")
-					time.sleep(3600.1-(time.time()-timeOfFirstReq))
-					print("Done waiting.")
-					try:
-						requestPlaylistCreate.execute()
-					except Exception as e:
-						print(e)
-						exit(1)
+		playlistID = ''
+		if(not link):
+			#error handle for quota overload, use timeOfFirstReq to determine how long to wait
+			requestPlaylistCreate = ytResource.playlists().insert(
+				part="snippet,status",
+				body={
+					"snippet": {
+						"title": title,
+						"description": descrip,
+						"defaultLanguage": "en"
+					},
+					"status": {
+						"privacyStatus": status
+					}
+				}
+			)
+			#error handle for quota overload
+			try:
+				playlistCreateResponse = requestPlaylistCreate.execute()
+				playlistID = playlistCreateResponse['id']
+			except googleapiclient.errors.HttpError as error:
+				if 'quota' in error._get_reason():
+					print("Lyric analysis completed. Quota limit reached. Answer the following question:")
+					waitAnswer = ''
+					while waitAnswer!='yes' and waitAnswer!='no' and waitAnswer!='Yes' and waitAnswer!='No':
+						waitAnswer=input("Are you okay with the program sleeping for an hour until it requests more data? Answer 'yes' or 'no' (*Note: If you answer no, you will be given the list of video ids for the songs that were deemed appropriate which you can copy and paste when asked to in the next run which must be in at least an hour from now.)")
+					if waitAnswer=='yes' or waitAnswer=='Yes':
+						print("Waiting for an hour.")
+						time.sleep(3600.1-(time.time()-timeOfFirstReq))
+						print("Done waiting.")
+						try:
+							playlistCreateResponse = requestPlaylistCreate.execute()
+							playlistID = playlistCreateResponse['id']
+						except Exception as e:
+							print(e)
+							exit(1)
+					else:
+						return appropSongIDs
 				else:
-					return appropSongIDs
-			else:
-				print(error)
-				exit(1)
+					print(error)
+					exit(1)
+		else:
+			playlistID=getYTPlaylistID(link)
 		for id in appropSongIDs:
-			requestPlaylistInsert =  request = ytResource.playlistItems().insert(
+			requestPlaylistInsert = ytResource.playlistItems().insert(
 			part="snippet",
 			body={
 				"snippet": {
-					"playlistId": playlistCreateResponse['id'],
+					"playlistId": playlistID,
 					"position": 0,
 					"resourceId": {
 						"kind": "youtube#video",
@@ -121,7 +128,7 @@ def createYTPlaylist(ytResource,appropSongIDs:list[str],title:str,descrip:str,st
 					if waitAnswer=='yes' or waitAnswer=='Yes':
 						time.sleep(3600.1-(time.time()-timeOfFirstReq))
 						try:
-							request.execute()
+							requestPlaylistInsert.execute()
 						except Exception as e:
 							print(e)
 							exit(1)
