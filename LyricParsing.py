@@ -104,7 +104,8 @@ def parseAZLyrics(artists: list, songTitle: str,inappropWordList: list[str]):
     @param artists : artist names
     @param songTitle
     @param inappropWordList
-    @return : First value: None on error, False if none of the words from inappropWordList appear, or True if at least one does; Second value: True if there is an index error when accessing metadata[1] in the azapi library code, False otherwise
+    @return : None on error, False if none of the words from inappropWordList appear, or True if at least one does
+    @return : True if there is an index error when accessing metadata[1] in the azapi library code, False otherwise
     """
     
     api = azapi.AZlyrics()
@@ -159,6 +160,8 @@ def findAndParseLyrics(artists:list, songTitle:str, appropSongIDs:list, id:str, 
     @param azUnusActErrOccurred : boolean indicating whether an error occurred recently with AZ Lyrics pertaining to unusual activity coming from the user IP address
     @param reqsSinceLastAZReq : keeps track of the number of requests since the last AZ API request so that another request can be attempted after a certain amount of other API requests
     @param ytResource : YouTube object with the necessary credentials to request data from the YouTube API
+    @return azUnusActErrOccurred : boolean for if the AZ Lyric API libary variable "metadata" has a message about unusual activity as its first element
+    @return reqsSinceLastAZReq : number of requests since the last AZ API request
     """
     inappropWordList = getInappropWordList("InappropriateWords.txt")
     #boolean for if the song with id is inappropriate, assigned None if the api whose turn it is could not find anything or received an error

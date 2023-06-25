@@ -11,7 +11,7 @@ from ytmusicapi import YTMusic
 
 def getAppropSpotifySongs(link:str)->list[str]:
 	"""
-	This function is meant to parse the Spotfiy playlist data to retrieve the Spotify ids for the appropriate songs and update and return an array with those ids.
+	This function is meant to parse the Spotfiy playlist data for the artists and song titles to help find lyrics and then retrieves the Spotify ids for the appropriate songs and update and return an array with those ids.
 	@param link : link to playlist
 	@return appropSongIds : list with string Spotify ids of the appropriate songs in the playlist
 	"""
@@ -65,10 +65,9 @@ def getAppropSpotifySongs(link:str)->list[str]:
 		
 	return appropSongIds
 
-#try to find lyrics first and then YT transcript as last resort
 def getAppropYTSongs(link:str):
 	"""
-	This function parses the songs in a YouTube playlist and returns the ids of those songs that are appropriate for children.
+	This function parses the songs in a YouTube playlist for the artists and song title and returns the ids of those songs that are appropriate for children.
 	@param link : link to YouTube playlist
 	@return youtube : resource object with necessary credentials stored to read, create and update playlists
 	@return appropSongIDs : list of YouTube ids for videos deemed appropriate for children by the program
@@ -100,9 +99,10 @@ def getAppropYTSongs(link:str):
 		except googleapiclient.errors.HttpError as error:
 			if 'quota' in error._get_reason():
 				print('Quota limit reached while requesting original playlist info. Answer the following question:')
+				#can implement as preemptive checkbox in GUI
 				waitAnswer = ''
 				while waitAnswer!='yes' and waitAnswer!='no' and waitAnswer!='Yes' and waitAnswer!='No':
-					waitAnswer=input("Are you okay with the program sleeping for an hour so that the quota can be refilled for the program to continue?Answer 'yes' or 'no'.'")
+					waitAnswer=input("Are you okay with the program sleeping for an hour so that the quota can be refilled for the program to continue?Answer 'yes' or 'no': ")
 				if waitAnswer=='yes' or waitAnswer=='Yes':
 					print("Waiting for an hour.")
 					time.sleep(3600.1-(time.time()-timeOfFirstReq))
@@ -132,14 +132,17 @@ def getAppropYTSongs(link:str):
 					if potentialInd > hyphenInd and potentialInd < endIndForSongTitleStr:
 						endIndForSongTitleStr=potentialInd
 				songTitle = songTitle[songTitle.find(' - ')+3:endIndForSongTitleStr-1]
-			print(artists + ' - ' + songTitle)
-			azUnusActErrOccurred,reqsSinceLastAZReq = azUnusActErrOccurred,reqsSinceLastAZReq = LyricParsing.findAndParseLyrics([artists],songTitle,appropSongIDs,item['snippet']['resourceId']['videoId'],azUnusActErrOccurred,reqsSinceLastAZReq,youtube)
+			azUnusActErrOccurred,reqsSinceLastAZReq = LyricParsing.findAndParseLyrics([artists],songTitle,appropSongIDs,item['snippet']['resourceId']['videoId'],azUnusActErrOccurred,reqsSinceLastAZReq,youtube)
 		if 'nextPageToken' in response:
 			nextPageToken=response['nextPageToken']
 	return youtube,appropSongIDs,timeOfFirstReq
 
-#check if quota applies
 def getAppropYTMusicSongs(link:str):
+	"""
+	This function uses the YT Music api to collect artist and song title info from each song in a playlist and returns ids corresponding to songs deemed appropriate.
+	@param link : link to YouTube Music playlist
+	@return
+	"""
 	if 'music.youtube' not in link:
 		return 'Not a valid YouTube Music link'
 	appropSongIDs = []
@@ -155,7 +158,7 @@ def getAppropYTMusicSongs(link:str):
     #keeps track the amount of requests since the
 	reqsSinceLastAZReq = 0
 	for track in data['tracks']:
-		artists = [artist for artist in track['artists']]
+		artists = [artist['name'] for artist in track['artists']]
 		songTitle = track['title']
 		specStrFirstOccurArr = [songTitle.find('feat.'),songTitle.find('ft.'),songTitle.find('('),songTitle.find('[')]
 		endIndForSongTitleStr = len(songTitle)+1
@@ -163,8 +166,8 @@ def getAppropYTMusicSongs(link:str):
 					if potentialInd > -1 and potentialInd < endIndForSongTitleStr:
 						endIndForSongTitleStr=potentialInd
 		songTitle = songTitle[:endIndForSongTitleStr]
-		LyricParsing.findAndParseLyrics(artists,songTitle,appropSongIDs,track['videoId'],azUnusActErrOccurred,reqsSinceLastAZReq,ytmusic)
-	return appropSongIDs
+		azUnusActErrOccurred,reqsSinceLastAZReq = LyricParsing.findAndParseLyrics(artists,songTitle,appropSongIDs,track['videoId'],azUnusActErrOccurred,reqsSinceLastAZReq,ytmusic)
+	return appropSongIDs,ytmusic
 
 #getAppropYTMusicSongs('https://music.youtube.com/playlist?list=RDCLAK5uy_mfdqvCAl8wodlx2P2_Ai2gNkiRDAufkkI')
 
