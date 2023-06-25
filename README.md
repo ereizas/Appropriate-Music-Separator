@@ -4,10 +4,12 @@ This program is meant to take in a music playlist link or file with one or more 
 
 # Setup
 
+*Test packaging the code into executables.
 Certain setups need to be completed before you run the program.
 
-1. If you inputting a Spotify or YouTube playlist, go through the Genius Lyric API Setup
-2. For each type of playlist you desire to input and create, go to the corresponding setup section (i.e. Spotify Setup for Spotify playlist input and creation)
+1. If you inputting a Spotify, YouTube, or YouTube Music playlist, go through the Genius Lyric API Setup
+2. If you want to separate appropriate music from a YouTube playlist, I strongly recommend that you select the YouTube music option instead because most if not all music should transfer over once you find a playlist there, and the YouTube option has limits that will be bothersome (read below if you would still like to use YouTube instead of YouTube Music). Also, the setup for YouTube Music is much shorter.
+3. For each type of playlist you desire to input and create, go to the corresponding setup section (i.e. Spotify Setup for Spotify playlist input and creation)
 
 ## Genius Lyric API Setup
 
@@ -40,6 +42,17 @@ You can skip steps 1-5 if you are **not** on a Windows machine. These steps are 
 15. Copy the Client ID and paste it into the single quote marks next to spotifyClientID in the config.py file you downloaded
 16. Click view Client Secret and do the same as the last step but for the single quote marks next to spotifyClientSecret
 
+## YouTube Music Setup
+
+1. Open the command prompt or terminal on your computer (search either one of these in the home search or applications search feature)
+2. Type "cd" then find the location of the folder/directory that you downloaded the project to and copy (CTRL + C) and paste (CTRL + SHIFT + V) that into the terminal.
+3. Type "pip install ytmusicapi" and press Enter
+4. Type ytmusicapi oauth
+5. Check if code at the end of the link that pops up and the code shown in the terminal match up
+6. On the site, click on the account that you want the playlist to be created in
+7. Press Enter in the terminal
+8. Confirm there is a file called oauth.json in the directory/folder for the program.
+
 ## Youtube Setup
 
 It is important to note that YouTube's API limits playlist creation and addition a lot since it costs more quota points. To clarify, every hour you get a quota of 10,000 points. Requesting the information for every 50 songs from a playlist costs 1 point each, creating a playlist costs 50, and adding one song to the playlist costs 50. So for a playlist with 200 songs, 4 points would be used for requesting the playlist information and 50 would be used for creating a playlist which leaves us with 9946 points. This only allows for 198 of the songs to be added. If there are more songs to be added after the quota is reached, you will be given the option to wait an hour for the quota to refill or to receive links of the songs to be added.
@@ -63,15 +76,6 @@ It is important to note that YouTube's API limits playlist creation and addition
 17. Click the Enabled APIs & Services tab on the left
 18. Search for "YouTube Data API v3" or scroll down, and click on it under the YouTube section
 19. Click "Enable"
-
-## YouTube Music Setup
-
-pip install ytmusicapi
-ytmusicapi oauth
-check if codes match
-click on the account you want to use
-press enter back in the terminal/command prompt
-Confirm there is a file called oauth.json in the directory/folder for the program
 
 # Ideas for Future Features
 
