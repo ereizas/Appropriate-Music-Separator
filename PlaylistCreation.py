@@ -5,6 +5,7 @@ import googleapiclient.discovery
 import googleapiclient.errors
 import time
 from StrParsing import getYTPlaylistID
+from ytmusicapi import YTMusic
 def createSpotifyPlaylist(title: str,descrip: str,appropSongIDs: list[str],username: str):
 	"""
 	This function creates the child-appropriate Spotify playlists and adds the songs with the IDs indcated in appropSongIDs.
@@ -133,8 +134,9 @@ def createYTPlaylist(ytResource,appropSongIDs:list[str],link:str,title:str,descr
 							print(e)
 							exit(1)
 					else:
-						#returns links to the videos left to add to the playlist starting at numSongsAdded-1 to avoid repeats
-						return ['https://youtube.com/watch?v='+id for id in appropSongIDs[numSongsAdded-1:]]
+						print("You can add an id to the end of 'https://youtube.com/watch?v=' to find the corresponding video.")
+						#returns ids for videos left to add to the playlist starting at numSongsAdded-1 to avoid repeats
+						return [id for id in appropSongIDs[numSongsAdded-1:]]
 				else:
 					print(error)
 					exit(1)
@@ -143,4 +145,12 @@ def createYTPlaylist(ytResource,appropSongIDs:list[str],link:str,title:str,descr
 				pass
 	else:
 		return "There are no appropriate songs in the given playlist."
+
+def createYTMusicPlaylist(ytMusicResource:YTMusic,appropSongIDs:list[str],link:str,title:str,descrip:str,status:str):
+	if not link:
+		#privacy status must be in all caps
+		return ytMusicResource.create_playlist(title,descrip,status,appropSongIDs)
+	else:
+		#duplicates will be allowed as to not cause error and to speed up the program
+		ytMusicResource.add_playlist_items(getYTPlaylistID(link),appropSongIDs,duplicates=True)
 		
