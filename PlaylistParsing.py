@@ -51,13 +51,16 @@ def getAppropSpotifySongs(link:str)->list[str]:
 					exit(1)
 				attempts+=1
 				print(data)
+		#indicates whether the variable "metadata" was assigned a message saying that there is suspicious activity coming from the user's IP address as the only element in the array
+		azUnusActErrOccurred = False
+		#keeps track the amount of requests since the
+		reqsSinceLastAZReq = 0
 		for item in data['items']:
 			if not item['track']['explicit']:
 				songTitle = item['track']['name']
 				#conditional in list comprehension prevents featured artists mentioned in the song title from being repeated
 				artists = [artist['name'] for artist in item['track']['artists'] if artist['name'] not in songTitle]
-				#passing artists into an array enforces the perception of artists as being an array
-				LyricParsing.findAndParseLyrics(artists,songTitle,appropSongIds,item['track']['id'],'')
+				azUnusActErrOccurred,reqsSinceLastAZReq = LyricParsing.findAndParseLyrics(artists,songTitle,appropSongIds,item['track']['id'],azUnusActErrOccurred,reqsSinceLastAZReq,'')
 		data = spotifyObj.next(data)
 		
 	return appropSongIds
@@ -112,6 +115,10 @@ def getAppropYTSongs(link:str):
 			else:
 				print(error)
 				exit(1)
+		#indicates whether the variable "metadata" was assigned a message saying that there is suspicious activity coming from the user's IP address as the only element in the array
+		azUnusActErrOccurred = False
+		#keeps track the amount of requests since the
+		reqsSinceLastAZReq = 0
 		for item in response['items']:
 			artists = ''
 			songTitle = item['snippet']['title']
@@ -126,7 +133,7 @@ def getAppropYTSongs(link:str):
 						endIndForSongTitleStr=potentialInd
 				songTitle = songTitle[songTitle.find(' - ')+3:endIndForSongTitleStr-1]
 			print(artists + ' - ' + songTitle)
-			LyricParsing.findAndParseLyrics([artists],songTitle,appropSongIDs,item['snippet']['resourceId']['videoId'],youtube)
+			azUnusActErrOccurred,reqsSinceLastAZReq = azUnusActErrOccurred,reqsSinceLastAZReq = LyricParsing.findAndParseLyrics([artists],songTitle,appropSongIDs,item['snippet']['resourceId']['videoId'],azUnusActErrOccurred,reqsSinceLastAZReq,youtube)
 		if 'nextPageToken' in response:
 			nextPageToken=response['nextPageToken']
 	return youtube,appropSongIDs,timeOfFirstReq
@@ -143,6 +150,10 @@ def getAppropYTMusicSongs(link:str):
 	except Exception as e:
 		print(e)
 		exit(1)
+	#indicates whether the variable "metadata" was assigned a message saying that there is suspicious activity coming from the user's IP address as the only element in the array
+	azUnusActErrOccurred = False
+    #keeps track the amount of requests since the
+	reqsSinceLastAZReq = 0
 	for track in data['tracks']:
 		artists = [artist for artist in track['artists']]
 		songTitle = track['title']
@@ -152,10 +163,10 @@ def getAppropYTMusicSongs(link:str):
 					if potentialInd > -1 and potentialInd < endIndForSongTitleStr:
 						endIndForSongTitleStr=potentialInd
 		songTitle = songTitle[:endIndForSongTitleStr]
-		LyricParsing.findAndParseLyrics(artists,songTitle,appropSongIDs,track['videoId'],ytmusic)
+		LyricParsing.findAndParseLyrics(artists,songTitle,appropSongIDs,track['videoId'],azUnusActErrOccurred,reqsSinceLastAZReq,ytmusic)
 	return appropSongIDs
 
-getAppropYTMusicSongs('https://music.youtube.com/playlist?list=RDCLAK5uy_mfdqvCAl8wodlx2P2_Ai2gNkiRDAufkkI')
+#getAppropYTMusicSongs('https://music.youtube.com/playlist?list=RDCLAK5uy_mfdqvCAl8wodlx2P2_Ai2gNkiRDAufkkI')
 
 def getAppropSouncloudSongs(link):
 	pass
