@@ -1,11 +1,10 @@
 #This will temporarily receive input through the commandline instead of a GUI for testing
 import PlaylistParsing, PlaylistCreation, config
 def testSpotifyPart():
-    username = config.spotifyUserID
     link = input("Paste in your Spotify playlist link (CTRL + SHIFT + V) and press Enter: ")
-    newPlaylistTitle = input("Enter a title for the new playlist and press Enter: ")
-    newPlaylistDescrip = input("Enter a description for the new playlist or press Enter without typing anything if you do not want one: ")
-    print(PlaylistCreation.createSpotifyPlaylist(newPlaylistTitle,newPlaylistDescrip,PlaylistParsing.getAppropSpotifySongs(link),username))
+    title = input("Enter a title for the new playlist and press Enter: ")
+    descrip = input("Enter a description for the new playlist or press Enter without typing anything if you do not want one: ")
+    print(PlaylistCreation.createSpotifyPlaylist(title,descrip,PlaylistParsing.getAppropSpotifySongs(link),config.spotifyUserID))
     #Make sure to uncomment functions you test in PlaylistParsing.py
     """
     https://open.spotify.com/playlist/3duJ5cNbfcCYEBQLEmRtIo
@@ -20,14 +19,42 @@ def testSpotifyPart():
     https://open.spotify.com/playlist/3Zc0vSZnaQK9eJvhnvnWpi
     """
 
+#add option to provide playlist link and appropriate song ids (latter should come from a previous run) which would allow the program to skip certain steps
+#advise users to create playlist on their own so that the program can request 2500 more songs from the original playlist or add one more song to the new playlist than if it had to make the playlist itself
 def testYTPart():
-    link = input('Paste in your YouTube playlist link (CTRL + SHIFT + V) and press Enter: ')
-    title = input('Enter a title for the new playlist and press Enter: ')
-    ytResource,appropSongIds,timeOfFirstReq = PlaylistParsing.getAppropYTSongs(link,False)
-    print(PlaylistCreation.createYTPlaylist(ytResource,appropSongIds,title,"",'private',False,timeOfFirstReq))
+    sourceLink = input('Paste in the YouTube playlist link that you want the program to look through (CTRL + SHIFT + V) and press Enter: ')
+    #add link verification for destLink
+    destLink = input('Paste a link to the playlist you want the songs added to if you created one or do not type anything and press Enter if you did not: ')
+    title = ''
+    descrip = ''
+    publOrPriv = ''
+    if not destLink:
+        title = input('Enter a title for the new playlist and press Enter: ')
+        descrip = input('Enter a description for the new playlist or press Enter without typing anything if you do not want one: ')
+        publOrPriv = ''
+        while publOrPriv!='public' and publOrPriv!='private':
+            publOrPriv=input("Do you want your playlist to be public or private(Enter either \"public\" or \"private\")? Enter answer here: ")
+    ytResource,appropSongIds,timeOfFirstReq = PlaylistParsing.getAppropYTSongs(sourceLink)
+    print(PlaylistCreation.createYTPlaylist(ytResource,appropSongIds,destLink,title,descrip,publOrPriv,timeOfFirstReq))
     """
     https://www.youtube.com/watch?v=CevxZvSJLk8&list=PLWLlkFICHOB5Amt6T7IPawzxX4WNNyH4N
     https://www.youtube.com/watch?v=OPf0YbXqDm0&list=PLMC9KNkIncKtPzgY-5rmhvj7fax8fdxoj
     """
 
-testYTPart()
+def testYTMusicPart():
+    sourceLink = input('Paste in the YouTube Music playlist link that you want the program to look through (CTRL + SHIFT + V) and press Enter: ')
+    #add link verification for destLink
+    destLink = input('Paste a link to the playlist you want the songs added to if you created one or do not type anything and press Enter if you did not: ')
+    title = ''
+    descrip = ''
+    publOrPriv = ''
+    if not destLink:
+        title = input('Enter a title for the new playlist and press Enter: ')
+        descrip = input('Enter a description for the new playlist or press Enter without typing anything if you do not want one: ')
+        publOrPriv = ''
+        while publOrPriv!='PUBLIC' and publOrPriv!='PRIVATE':
+            publOrPriv=input("Do you want your playlist to be public or private(Enter either \"PUBLIC\" or \"PRIVATE\")? Enter answer here: ")
+    appropSongIDs, ytMusicResource = PlaylistParsing.getAppropYTMusicSongs(sourceLink)
+    PlaylistCreation.createYTMusicPlaylist(ytMusicResource,appropSongIDs,destLink,title,descrip,publOrPriv)
+
+testYTMusicPart()
