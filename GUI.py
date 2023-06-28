@@ -1,5 +1,36 @@
 #This will temporarily receive input through the commandline instead of a GUI for testing
 import PlaylistParsing, PlaylistCreation, config
+import tkinter
+from tkinter import *
+from tkinter import ttk
+
+class GUI():
+    def __init__(self,root):
+        #bool for whether GUI is running
+        self.running = True
+        self.__root = root
+        self.__root.title('Appropriate Song Separator')
+        title_label = ttk.Label(self.__root, text = 'Appropriate Song Separator', font='Daytona 35 bold', justify=CENTER)
+        title_label.pack(padx=5,pady=5)
+
+        self.__style = ttk.Style()
+        self.__style.configure('TButton', font = ('Daytona',12,'bold'))
+        self.__style.configure('Header.TLabel', font = ('Daytona',18,'bold'))
+        
+        uiFrame=ttk.Frame(self.__root)
+        uiFrame.pack(padx=5,pady=5)
+        self.link = StringVar()
+        self.playlistTitle = StringVar()
+        self.descrip = StringVar()
+        #need to clarify if all lower case or upper case based on selection of YT or YT Music
+        self.status = StringVar()
+        #options for whether the user wants to wait an hour for the YT API quota to refill if it runs out at the steps in the names of the following three variables
+        self.getYTPlaylistReqQuotaWait = BooleanVar()
+        self.postYTLyricAnalysisQuotaWait = BooleanVar()
+        self.addingYTVidsQuotaWait = BooleanVar()
+        self.buildGUI(root,self.link)
+
+#Add link validation here!
 def testSpotifyPart():
     link = input("Paste in your Spotify playlist link (CTRL + SHIFT + V) and press Enter: ")
     title = input("Enter a title for the new playlist and press Enter: ")
@@ -57,4 +88,8 @@ def testYTMusicPart():
     appropSongIDs, ytMusicResource = PlaylistParsing.getAppropYTMusicSongs(sourceLink)
     PlaylistCreation.createYTMusicPlaylist(ytMusicResource,appropSongIDs,destLink,title,descrip,publOrPriv)
 
-testYTMusicPart()
+if __name__=='__main__':
+    root = Tk()
+    app = GUI(root)
+    root.mainloop()
+    exit(0)
