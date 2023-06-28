@@ -1,6 +1,5 @@
 #This will temporarily receive input through the commandline instead of a GUI for testing
 import PlaylistParsing, PlaylistCreation, config
-import tkinter
 from tkinter import *
 from tkinter import ttk
 
@@ -28,7 +27,17 @@ class GUI():
         self.getYTPlaylistReqQuotaWait = BooleanVar()
         self.postYTLyricAnalysisQuotaWait = BooleanVar()
         self.addingYTVidsQuotaWait = BooleanVar()
-        self.buildGUI(root,self.link)
+        self.buildGUI(uiFrame,self.link)
+
+    def buildGUI(self,master,link):
+        ttk.Label(master,text='Enter or paste in the playlist link:').grid(row=0,column=0)
+        self.linkEntry = ttk.Entry(master,width=50,textvariable=link,)
+        self.linkEntry.grid(row=1,column=0)
+        #for spacing
+        ttk.Frame(master).grid(row=2,column=0,pady=5)
+        ttk.Label(master,text='Select the streaming service of the playlist:').grid(row=3,column=0)
+        streamingServiceDropDown = ttk.Combobox(master,values=['Spotify','YouTube Music','YouTube'])
+        streamingServiceDropDown.grid(row=4,column=0)
 
 #Add link validation here!
 def testSpotifyPart():
