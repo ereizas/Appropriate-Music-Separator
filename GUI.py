@@ -1,4 +1,3 @@
-#This will temporarily receive input through the commandline instead of a GUI for testing
 import PlaylistParsing, PlaylistCreation, config
 from tkinter import *
 from tkinter import ttk
@@ -35,10 +34,14 @@ class GUI():
         self.addingYTVidsQuotaWait = BooleanVar()
         self.buildYTOptions(ytOptionsFrame,self.private,self.getYTPlaylistReqQuotaWait,self.postYTLyricAnalysisQuotaWait,self.addingYTVidsQuotaWait)
         
-        self.separateButton = ttk.Button(ytOptionsFrame,text='Separate Appropriate Music')
-        self.separateButton.grid(row=19,column=0)
+        endFrame = ttk.Frame(self.__root)
+        endFrame.pack(padx=5,pady=5)
+        self.buildEndFrame(endFrame)
 
     def buildGeneralGUI(self,master,prevRunAppropYTIDs,originalLink,newLink,playlistTitle,descrip):
+        """
+        Builds the part of the GUI that applies for all types of playlists
+        """
         ttk.Label(master,text='If you have it, paste the list of YouTube IDs from a previous run:').grid(row=0,column=0)
         self.prevRunAppropYTIDsEntry = ttk.Label(master,width=100,textvariable=prevRunAppropYTIDs)
         self.prevRunAppropYTIDsEntry.grid(row=1,column=0)
@@ -75,6 +78,16 @@ class GUI():
         self.lyricAnalysisQuotaWaitCheckbutton.grid(row=3,column=0,pady=3)
         self.ytVidsQuotaWaitCheckbutton = ttk.Checkbutton(master,text='Check this if you are okay with waiting an hour for quota refill after it ran out from adding videos to the new playlist. *If unchecked, the program will return a list of the rest of the ids that need to be added.',variable=addingYTVidsQuotaWait)
         self.ytVidsQuotaWaitCheckbutton.grid(row=4,column=0,pady=3)
+    
+    def separatePlaylist(self):
+        print("test")
+    
+    def buildEndFrame(self,master):
+        self.separateButton = ttk.Button(master,text='Separate Appropriate Music',command=self.separatePlaylist)
+        self.separateButton.grid(row=0,column=0)   
+        ttk.Label(master,text='Output:').grid(row=1,column=0)
+        self.outputTextBox = ttk.Entry(master)
+        self.outputTextBox.grid(row=2,column=0)
 
 if __name__=='__main__':
     root = Tk()
