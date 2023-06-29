@@ -16,9 +16,10 @@ class GUI():
         self.__style.configure('TButton', font = ('Daytona',12,'bold'))
         self.__style.configure('Header.TLabel', font = ('Daytona',18,'bold'))
         
-        uiFrame=ttk.Frame(self.__root)
-        uiFrame.pack(padx=5,pady=5)
-        self.link = StringVar()
+        generalFrame=ttk.Frame(self.__root)
+        generalFrame.pack(padx=5,pady=5)
+        self.originalLink = StringVar()
+        self.newLink = StringVar()
         self.playlistTitle = StringVar()
         self.descrip = StringVar()
         #need to clarify if all lower case or upper case based on selection of YT or YT Music
@@ -27,17 +28,26 @@ class GUI():
         self.getYTPlaylistReqQuotaWait = BooleanVar()
         self.postYTLyricAnalysisQuotaWait = BooleanVar()
         self.addingYTVidsQuotaWait = BooleanVar()
-        self.buildGUI(uiFrame,self.link)
+        self.buildGeneralGUI(generalFrame,self.originalLink,self.newLink,self.playlistTitle,self.descrip)
 
-    def buildGUI(self,master,link):
-        ttk.Label(master,text='Enter or paste in the playlist link:').grid(row=0,column=0)
-        self.linkEntry = ttk.Entry(master,width=50,textvariable=link,)
+    def buildGeneralGUI(self,master,originalLink,newLink,playlistTitle,descrip):
+        ttk.Label(master,text='Enter or paste in the link of the playlist you want the program to analyze:').grid(row=0,column=0)
+        self.linkEntry = ttk.Entry(master,width=50,textvariable=originalLink)
         self.linkEntry.grid(row=1,column=0)
         #for spacing
         ttk.Frame(master).grid(row=2,column=0,pady=5)
         ttk.Label(master,text='Select the streaming service of the playlist:').grid(row=3,column=0)
         streamingServiceDropDown = ttk.Combobox(master,values=['Spotify','YouTube Music','YouTube'])
         streamingServiceDropDown.grid(row=4,column=0)
+        ttk.Label(master,text='Enter the link for the playlist you want the appropriate songs to be added to (recommended for YouTube, not as important for YouTube music) or skip to the next entry to create a new one:').grid(row=5,column=0)
+        self.newPlaylistLinkEntry = ttk.Entry(master,width=50,textvariable=newLink)
+        self.newPlaylistLinkEntry.grid(row=6,column=0)
+        ttk.Label(master,text='Enter a title for the new playlist:').grid(row=7,column=0)
+        self.TitleEntry = ttk.Entry(master,width=40,textvariable=playlistTitle)
+        self.TitleEntry.grid(row=8,column=0)
+        ttk.Label(master,text="Enter a description for the new playlist (optional):").grid(row=9,column=0)
+        self.descripEntry = ttk.Entry(master,width=50,textvariable=descrip)
+        self.descripEntry.grid(row=10,column=0)
 
 #Add link validation here!
 def testSpotifyPart():
