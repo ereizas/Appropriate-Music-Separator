@@ -18,94 +18,63 @@ class GUI():
         
         generalFrame=ttk.Frame(self.__root)
         generalFrame.pack(padx=5,pady=5)
+        self.prevRunAppropYTIDs = StringVar()
         self.originalLink = StringVar()
         self.newLink = StringVar()
         self.playlistTitle = StringVar()
         self.descrip = StringVar()
-        #need to clarify if all lower case or upper case based on selection of YT or YT Music
-        self.status = StringVar()
+        self.buildGeneralGUI(generalFrame,self.prevRunAppropYTIDs,self.originalLink,self.newLink,self.playlistTitle,self.descrip)
+
+        ytOptionsFrame = ttk.Frame(self.__root)
+        ytOptionsFrame.pack(padx=5,pady=5)
+        #need to decide upper or lower case based on whether YT or YT Music is selected
+        self.private = BooleanVar()
         #options for whether the user wants to wait an hour for the YT API quota to refill if it runs out at the steps in the names of the following three variables
         self.getYTPlaylistReqQuotaWait = BooleanVar()
         self.postYTLyricAnalysisQuotaWait = BooleanVar()
         self.addingYTVidsQuotaWait = BooleanVar()
-        self.buildGeneralGUI(generalFrame,self.originalLink,self.newLink,self.playlistTitle,self.descrip)
+        self.buildYTOptions(ytOptionsFrame,self.private,self.getYTPlaylistReqQuotaWait,self.postYTLyricAnalysisQuotaWait,self.addingYTVidsQuotaWait)
+        
+        self.separateButton = ttk.Button(ytOptionsFrame,text='Separate Appropriate Music')
+        self.separateButton.grid(row=19,column=0)
 
-    def buildGeneralGUI(self,master,originalLink,newLink,playlistTitle,descrip):
-        ttk.Label(master,text='Enter or paste in the link of the playlist you want the program to analyze:').grid(row=0,column=0)
+    def buildGeneralGUI(self,master,prevRunAppropYTIDs,originalLink,newLink,playlistTitle,descrip):
+        ttk.Label(master,text='If you have it, paste the list of YouTube IDs from a previous run:').grid(row=0,column=0)
+        self.prevRunAppropYTIDsEntry = ttk.Label(master,width=100,textvariable=prevRunAppropYTIDs)
+        self.prevRunAppropYTIDsEntry.grid(row=1,column=0)
+        ttk.Label(master,text='Enter or paste in the link of the playlist you want the program to analyze:').grid(row=2,column=0)
         self.linkEntry = ttk.Entry(master,width=50,textvariable=originalLink)
-        self.linkEntry.grid(row=1,column=0)
+        self.linkEntry.grid(row=3,column=0)
         #for spacing
-        ttk.Frame(master).grid(row=2,column=0,pady=5)
-        ttk.Label(master,text='Select the streaming service of the playlist:').grid(row=3,column=0)
+        ttk.Frame(master).grid(row=4,column=0,pady=5)
+        ttk.Label(master,text='Select the streaming service of the playlist:').grid(row=5,column=0)
         streamingServiceDropDown = ttk.Combobox(master,values=['Spotify','YouTube Music','YouTube'])
-        streamingServiceDropDown.grid(row=4,column=0)
-        ttk.Label(master,text='Enter the link for the playlist you want the appropriate songs to be added to (recommended for YouTube, not as important for YouTube music) or skip to the next entry to create a new one:').grid(row=5,column=0)
+        streamingServiceDropDown.grid(row=6,column=0)
+        ttk.Label(master,text='Enter the link for the playlist you want the appropriate songs to be added to (recommended for YouTube, not as important for YouTube music) or skip to the next entry to create a new one:').grid(row=7,column=0)
         self.newPlaylistLinkEntry = ttk.Entry(master,width=50,textvariable=newLink)
-        self.newPlaylistLinkEntry.grid(row=6,column=0)
-        ttk.Label(master,text='Enter a title for the new playlist:').grid(row=7,column=0)
+        self.newPlaylistLinkEntry.grid(row=8,column=0)
+        ttk.Label(master,text='Enter a title for the new playlist:').grid(row=9,column=0)
         self.TitleEntry = ttk.Entry(master,width=40,textvariable=playlistTitle)
-        self.TitleEntry.grid(row=8,column=0)
-        ttk.Label(master,text="Enter a description for the new playlist (optional):").grid(row=9,column=0)
+        self.TitleEntry.grid(row=10,column=0)
+        ttk.Label(master,text="Enter a description for the new playlist (optional):").grid(row=11,column=0)
         self.descripEntry = ttk.Entry(master,width=50,textvariable=descrip)
-        self.descripEntry.grid(row=10,column=0)
+        self.descripEntry.grid(row=12,column=0)
+        #add "Separate Appropriate Music" button after YT options if possible
+    
+    def buildYTOptions(self,master,private,getYTPlaylistReqQuotaWait,postYTLyricAnalysisQuotaWait,addingYTVidsQuotaWait):
+        """
+        Builds YT specific checkbox options
+        """
 
-#Add link validation here!
-def testSpotifyPart():
-    link = input("Paste in your Spotify playlist link (CTRL + SHIFT + V) and press Enter: ")
-    title = input("Enter a title for the new playlist and press Enter: ")
-    descrip = input("Enter a description for the new playlist or press Enter without typing anything if you do not want one: ")
-    print(PlaylistCreation.createSpotifyPlaylist(title,descrip,PlaylistParsing.getAppropSpotifySongs(link),config.spotifyUserID))
-    #Make sure to uncomment functions you test in PlaylistParsing.py
-    """
-    https://open.spotify.com/playlist/3duJ5cNbfcCYEBQLEmRtIo
-    https://open.spotify.com/playlist/3GJE68uV72wcsk7m6q99bL
-    https://open.spotify.com/playlist/01L7OAAENPDVgttzcq5NN5
-    https://open.spotify.com/playlist/1prjcMYoNiV4HLmO6PwlKo
-    https://open.spotify.com/playlist/7M0hlHcvmKT4OtyfkriQHr
-    https://open.spotify.com/playlist/1I5CX9jpaUFZxZ8kLMbBKo
-    https://open.spotify.com/playlist/04UuVmB3pxFQgNziUgyj4j
-    https://open.spotify.com/playlist/0BHAO3n0fsWjC6Z1mLJYsP
-    https://open.spotify.com/playlist/0OaqORX9wCVcmBXvGO7JU3
-    https://open.spotify.com/playlist/3Zc0vSZnaQK9eJvhnvnWpi
-    """
-
-#add option to provide playlist link and appropriate song ids (latter should come from a previous run) which would allow the program to skip certain steps
-#advise users to create playlist on their own so that the program can request 2500 more songs from the original playlist or add one more song to the new playlist than if it had to make the playlist itself
-def testYTPart():
-    sourceLink = input('Paste in the YouTube playlist link that you want the program to look through (CTRL + SHIFT + V) and press Enter: ')
-    #add link verification for destLink
-    destLink = input('Paste a link to the playlist you want the songs added to if you created one or do not type anything and press Enter if you did not: ')
-    title = ''
-    descrip = ''
-    publOrPriv = ''
-    if not destLink:
-        title = input('Enter a title for the new playlist and press Enter: ')
-        descrip = input('Enter a description for the new playlist or press Enter without typing anything if you do not want one: ')
-        publOrPriv = ''
-        while publOrPriv!='public' and publOrPriv!='private':
-            publOrPriv=input("Do you want your playlist to be public or private(Enter either \"public\" or \"private\")? Enter answer here: ")
-    ytResource,appropSongIds,timeOfFirstReq = PlaylistParsing.getAppropYTSongs(sourceLink)
-    print(PlaylistCreation.createYTPlaylist(ytResource,appropSongIds,destLink,title,descrip,publOrPriv,timeOfFirstReq))
-    """
-    https://www.youtube.com/watch?v=CevxZvSJLk8&list=PLWLlkFICHOB5Amt6T7IPawzxX4WNNyH4N
-    https://www.youtube.com/watch?v=OPf0YbXqDm0&list=PLMC9KNkIncKtPzgY-5rmhvj7fax8fdxoj
-    """
-
-def testYTMusicPart():
-    sourceLink = input('Paste in the YouTube Music playlist link that you want the program to look through (CTRL + SHIFT + V) and press Enter: ')
-    #add link verification for destLink
-    destLink = input('Paste a link to the playlist you want the songs added to if you created one or do not type anything and press Enter if you did not: ')
-    title = ''
-    descrip = ''
-    publOrPriv = ''
-    if not destLink:
-        title = input('Enter a title for the new playlist and press Enter: ')
-        descrip = input('Enter a description for the new playlist or press Enter without typing anything if you do not want one: ')
-        publOrPriv = ''
-        while publOrPriv!='PUBLIC' and publOrPriv!='PRIVATE':
-            publOrPriv=input("Do you want your playlist to be public or private(Enter either \"PUBLIC\" or \"PRIVATE\")? Enter answer here: ")
-    appropSongIDs, ytMusicResource = PlaylistParsing.getAppropYTMusicSongs(sourceLink)
-    PlaylistCreation.createYTMusicPlaylist(ytMusicResource,appropSongIDs,destLink,title,descrip,publOrPriv)
+        self.privateCheckbutton = ttk.Checkbutton(master,text='Check this if you want the playlist to be private (YouTube and YouTube Music only)',variable=private)
+        self.privateCheckbutton.grid(row=0,column=0)
+        ttk.Label(master,text='The following options are for YouTube (not YouTube Music) playlists only (read the paragraph before the steps in the YouTube setup section of the README.md file for a review of the quota limit and cost):').grid(row=1,column=0)
+        self.playlistReqQuotaWaitCheckbutton = ttk.Checkbutton(master,text='Check this if you are okay with waiting an hour for the request quota to refill after it has ran out while requesting information from the original playlist (recommended for large playlists of about a few hundred songs)',variable=getYTPlaylistReqQuotaWait)
+        self.playlistReqQuotaWaitCheckbutton.grid(row=2,column=0,pady=3)
+        self.lyricAnalysisQuotaWaitCheckbutton = ttk.Checkbutton(master,text='Check this if you are okay with waiting an hour for quota to refill if it ran out after analyzing the lyrics of all the songs. *If unchecked, the program will return a list of ids that you can input to speed up the next run (which will still have to be in an hour).',variable=postYTLyricAnalysisQuotaWait)
+        self.lyricAnalysisQuotaWaitCheckbutton.grid(row=3,column=0,pady=3)
+        self.ytVidsQuotaWaitCheckbutton = ttk.Checkbutton(master,text='Check this if you are okay with waiting an hour for quota refill after it ran out from adding videos to the new playlist. *If unchecked, the program will return a list of the rest of the ids that need to be added.',variable=addingYTVidsQuotaWait)
+        self.ytVidsQuotaWaitCheckbutton.grid(row=4,column=0,pady=3)
 
 if __name__=='__main__':
     root = Tk()
