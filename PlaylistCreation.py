@@ -6,29 +6,39 @@ import googleapiclient.errors
 import time
 from StrParsing import getYTPlaylistID
 from ytmusicapi import YTMusic
-def createSpotifyPlaylist(title: str,descrip: str,appropSongIDs: list[str],username: str):
+#Add option to input premade playlist link and add bool parameters for YT quota wait
+def createSpotifyPlaylist(title:str,descrip:str,appropSongIDs:list[str],username:str):
 	"""
-	This function creates the child-appropriate Spotify playlists and adds the songs with the IDs indcated in appropSongIDs.
+	Creates or edits the child-appropriate Spotify playlists and adds the songs with the IDs indcated in appropSongIDs
 
 	@param title : title of the new playlist
 	@param descrip : description for the new playlist
 	@param appropSongIDs : list of string Spotify ids of the appropriate songs
 	@param username : username of the Spotify user using this program
-	@return : If the playlist contains at least one song, then a message telling the user to check their playlist is returned, otherwise a message indicating that there are no appropriate songs is returned.
+	@return : If the playlist contains at least one song, then a message telling the user to check their playlist is returned, otherwise a message indicating error or that there are no appropriate songs is returned.
+	@return : None on success, otherwise the portion of appropSongIDs that still needs to be added
 	"""
 
+	#if the user inputted appropSongIDs from a previous failed run, then it will be converted into a list
 	if type(appropSongIDs)==str:
-		return "Not a valid Spotify link"
+		appropSongIDs = appropSongIDs.split(', ')
+	#if there are any ids in appropSongIDs, then playlist creation will happen
 	if(appropSongIDs):
 			#need clientID and clientSecret from a Spotify account to get an access token required to access the API
 			clientID, clientSecret = config.spotifyClientID,config.spotifyClientSecret
 			token = SpotifyOAuth(client_id=clientID,client_secret=clientSecret,scope="playlist-modify-private",redirect_uri="https://localhost:8080/callback")
 			spotifyObj = spotipy.Spotify(auth_manager=token)
-			playlistData = spotifyObj.user_playlist_create(user=username,name=title,public=False,description=descrip)
-			#if there are songs that are deemed appropriate, then the playlist will be created
-			print("Number of appropriate songs: " + str(len(appropSongIDs)))
+			#if not link, remember to determine how to find playlist id based on whether link is entered
+			try:
+				#public must be set to False for Spotify to allow editing of the playlist
+				playlistData = spotifyObj.user_playlist_create(user=username,name=title,public=False,description=descrip)
+			except Exception as e:
+				return "Error: " + str(e), str(appropSongIDs)[1:len(str(appropSongIDs))-1]
 			if(len(appropSongIDs)<100):
-					spotifyObj.user_playlist_add_tracks(user=username,playlist_id=playlistData['id'],tracks=appropSongIDs)
+					try:
+						spotifyObj.user_playlist_add_tracks(user=username,playlist_id=playlistData['id'],tracks=appropSongIDs)
+					except Exception as e:
+						return "Error: " + str(e), str(appropSongIDs)[1:len(str(appropSongIDs))-1]
 			else:
 					for i in range(int(len(appropSongIDs)/100)):
 						#refreshes access token if it has expired
@@ -37,16 +47,22 @@ def createSpotifyPlaylist(title: str,descrip: str,appropSongIDs: list[str],usern
 						if token.is_token_expired(token_info):
 							token = SpotifyOAuth(client_id=config.spotifyClientID,client_secret=config.spotifyClientSecret,scope="playlist-read-private",redirect_uri="https://localhost:8080/callback",username=config.spotifyUserID)
 							spotifyObj = spotipy.Spotify(auth_manager=token)
-						spotifyObj.user_playlist_add_tracks(user=username,playlist_id=playlistData['id'],tracks=appropSongIDs[i*100:i*100+100])
+						try:
+							spotifyObj.user_playlist_add_tracks(user=username,playlist_id=playlistData['id'],tracks=appropSongIDs[i*100:i*100+100])
+						except Exception as e:
+							return "Error: " + str(e), str(appropSongIDs[i*100:])[1:len(str(appropSongIDs[i*100:]))-1]
 					if len(appropSongIDs)%100!=0:
-						spotifyObj.user_playlist_add_tracks(user=username,playlist_id=playlistData['id'],tracks=appropSongIDs[int(len(appropSongIDs)/100)*100:])
+						try:
+							spotifyObj.user_playlist_add_tracks(user=username,playlist_id=playlistData['id'],tracks=appropSongIDs[int(len(appropSongIDs)/100)*100:])
+						except Exception as e:
+							return "Error: " + str(e), str(appropSongIDs[int(len(appropSongIDs)/100)*100:])[1:len(str(appropSongIDs[int(len(appropSongIDs)/100)*100:]))-1]
 			return "Check your playlists"
 	else:
 			return "There are no appropriate songs in the given playlist."
-#implement option to add to exisiting playlist
+
 def createYTPlaylist(ytResource,appropSongIDs:list[str],link:str,title:str,descrip:str,status:str,timeOfFirstReq:float):
 	"""
-	This function creates a YouTube playlist and adds videos with the ids listed in appropSongIDs.
+	Creates or edits a YouTube playlist and adds videos with the ids listed in appropSongIDs
 	@param ytResource : YouTube object with the necessary credentials to read, create, and update a playlist
 	@param appropSongIDs : list of ids of YouTube videos that have been determined to be appropriate
 	@param link : link for premade playlist or empty string if not given a link
@@ -54,9 +70,13 @@ def createYTPlaylist(ytResource,appropSongIDs:list[str],link:str,title:str,descr
 	@param descrip : description for the playlist that the user desires
 	@param status : string indicating whether the playlist will be public or private
 	@param timeOfFirstReq : float that indicates how much time has passed since the first request to YouTube Data API
+	@return : str error message on error that is not because of the quota becoming empty or the rest of the ids to be added if the user does not want to wait an hour
+	@return : the rest of the ids to be added or None if the user does not want to wait for the quota to refill or on success
 	"""
-	if type(appropSongIDs)!=list:
-		return 'Invalid link or input for appropSongIDs'
+
+	#if the user inputted appropSongIDs from a previous failed run, then it will be converted into a list
+	if type(appropSongIDs)==str:
+		appropSongIDs = appropSongIDs.split(', ')
 	if(appropSongIDs):
 		#shown to user to help determine if they would like to wait for the quota to refill and the program
 		numSongsAdded = 0
@@ -94,13 +114,11 @@ def createYTPlaylist(ytResource,appropSongIDs:list[str],link:str,title:str,descr
 							playlistCreateResponse = requestPlaylistCreate.execute()
 							playlistID = playlistCreateResponse['id']
 						except Exception as e:
-							print(e)
-							exit(1)
+							return "Error: " + str(e), str(appropSongIDs)[1:len(str(appropSongIDs))-1]
 					else:
-						return appropSongIDs
+						return str(appropSongIDs)[1:len(str(appropSongIDs))-1], None
 				else:
-					print(error)
-					exit(1)
+					return "Error: " + str(error), str(appropSongIDs)[1:len(str(appropSongIDs))-1]
 		else:
 			playlistID=getYTPlaylistID(link)
 		for id in appropSongIDs:
@@ -131,26 +149,36 @@ def createYTPlaylist(ytResource,appropSongIDs:list[str],link:str,title:str,descr
 						try:
 							requestPlaylistInsert.execute()
 						except Exception as e:
-							print(e)
-							exit(1)
+							return "Error: " + str(e), str(appropSongIDs[numSongsAdded-1:])[1:len(str(appropSongIDs[numSongsAdded-1:]))-1]
 					else:
 						print("You can add an id to the end of 'https://youtube.com/watch?v=' to find the corresponding video.")
 						#returns ids for videos left to add to the playlist starting at numSongsAdded-1 to avoid repeats
-						return [id for id in appropSongIDs[numSongsAdded-1:]]
+						return str(appropSongIDs[numSongsAdded-1:])[1:len(str(appropSongIDs[numSongsAdded-1:]))-1]
 				else:
-					print(error)
-					exit(1)
+					return "Error: " + str(e), str(appropSongIDs[numSongsAdded-1:])[1:len(str(appropSongIDs[numSongsAdded-1:]))-1]
 			except Exception as e:
-				print(e)
-				pass
+				return "Error: " + str(e), str(appropSongIDs[numSongsAdded-1:])[1:len(str(appropSongIDs[numSongsAdded-1:]))-1]
 	else:
-		return "There are no appropriate songs in the given playlist."
+		return "There are no appropriate songs in the given playlist.", None
 
 def createYTMusicPlaylist(ytMusicResource:YTMusic,appropSongIDs:list[str],link:str,title:str,descrip:str,status:str):
+	"""
+	Creates or edits a YouTube music playlist and adds the songs with the ids listed in appropSongIDs to the playlist
+	@param ytMusicResource : resource object that can request the creation and editing of playlists
+	@param link : link to existing playlist that the user wants the songs added to
+	@param descrip : description for the new playlist that the user wants add
+	@param status : string with values "PUBLIC" or "PRIVATE" to indicate whether they want the new playlist to be public
+	@return : str error message on error
+	@return : the appropriate song ids that still need to be added
+	"""
 	if not link:
-		#privacy status must be in all caps
-		return ytMusicResource.create_playlist(title,descrip,status,appropSongIDs)
+		try:
+			ytMusicResource.create_playlist(title,descrip,status,appropSongIDs)
+		except Exception as e:
+			return "Error: " + str(e), str(appropSongIDs)[1:len(str(appropSongIDs))-1]
 	else:
-		#duplicates will be allowed as to not cause error and to speed up the program
-		ytMusicResource.add_playlist_items(getYTPlaylistID(link),appropSongIDs,duplicates=True)
-		
+		try:
+			#duplicates will be allowed as to not cause error and to speed up the program, but as long as the playlist does not have any songs added by the user (if a premade playlist is inputted), then there should not be any duplicates
+			ytMusicResource.add_playlist_items(getYTPlaylistID(link),appropSongIDs,duplicates=True)
+		except Exception as e:
+			return "Error: " + str(e),str(appropSongIDs)[1:len(str(appropSongIDs))-1]
