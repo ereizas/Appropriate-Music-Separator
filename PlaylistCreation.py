@@ -6,7 +6,7 @@ import googleapiclient.errors
 import time
 from StrParsing import getYTPlaylistID, getSpotifyPlaylistID
 from ytmusicapi import YTMusic
-#Add option to input premade playlist link and add bool parameters for YT quota wait
+#add bool parameters for YT quota wait
 def createSpotifyPlaylist(link:str,title:str,descrip:str,appropSongIDs:list[str],username:str):
 	"""
 	Creates or edits the child-appropriate Spotify playlists and adds the songs with the IDs indcated in appropSongIDs
@@ -79,7 +79,7 @@ def createSpotifyPlaylist(link:str,title:str,descrip:str,appropSongIDs:list[str]
 	else:
 			return "There are no appropriate songs in the given playlist.", None, None
 
-def createYTPlaylist(ytResource,appropSongIDs:list[str],link:str,title:str,descrip:str,status:str,timeOfFirstReq:float):
+def createYTPlaylist(ytResource,appropSongIDs:list[str],link:str,title:str,descrip:str,status:str,timeOfFirstReq:float,postYTLyricAnalysisQuotaWait:bool,addingYTVidsQuotaWait:bool):
 	"""
 	Creates or edits a YouTube playlist and adds videos with the ids listed in appropSongIDs
 	@param ytResource : YouTube object with the necessary credentials to read, create, and update a playlist
@@ -89,6 +89,8 @@ def createYTPlaylist(ytResource,appropSongIDs:list[str],link:str,title:str,descr
 	@param descrip : description for the playlist that the user desires
 	@param status : string indicating whether the playlist will be public or private
 	@param timeOfFirstReq : float that indicates how much time has passed since the first request to YouTube Data API
+	@param postYTLyricAnalysisQuotaWait : bool that indicates whether the user wants to wait an hour if the quota has been depleted after lyric analysis (when the program is ready to create the playlist)
+	@param addingYTVidsQuotaWait : bool that indicates whether the user wants to wait an hour if the quota has been depleted by adding a song to the new or premade playlist
 	@return : str error message on error that is not because of the quota becoming empty or the rest of the ids to be added if the user does not want to wait an hour
 	@return : the rest of the ids to be added or None if the user does not want to wait for the quota to refill or on success
 	@return : link to playlist if new one was created and error occurred, otherwise None
@@ -98,11 +100,9 @@ def createYTPlaylist(ytResource,appropSongIDs:list[str],link:str,title:str,descr
 	if type(appropSongIDs)==str:
 		appropSongIDs = appropSongIDs.split(', ')
 	if(appropSongIDs):
-		#shown to user to help determine if they would like to wait for the quota to refill and the program
 		numSongsAdded = 0
 		playlistID = ''
 		if(not link):
-			#error handle for quota overload, use timeOfFirstReq to determine how long to wait
 			requestPlaylistCreate = ytResource.playlists().insert(
 				part="snippet,status",
 				body={
@@ -122,11 +122,8 @@ def createYTPlaylist(ytResource,appropSongIDs:list[str],link:str,title:str,descr
 				playlistID = playlistCreateResponse['id']
 			except googleapiclient.errors.HttpError as error:
 				if 'quota' in error._get_reason():
-					print("Lyric analysis completed. Quota limit reached. Answer the following question:")
-					waitAnswer = ''
-					while waitAnswer!='yes' and waitAnswer!='no' and waitAnswer!='Yes' and waitAnswer!='No':
-						waitAnswer=input("Are you okay with the program sleeping for an hour until it requests more data? Answer 'yes' or 'no' (*Note: If you answer no, you will be given the list of video ids for the songs that were deemed appropriate which you can copy and paste when asked to in the next run which must be in at least an hour from now.)")
-					if waitAnswer=='yes' or waitAnswer=='Yes':
+					print("Lyric analysis completed. Quota limit reached.")
+					if postYTLyricAnalysisQuotaWait:
 						print("Waiting for an hour.")
 						time.sleep(3600.1-(time.time()-timeOfFirstReq))
 						print("Done waiting.")
@@ -160,11 +157,8 @@ def createYTPlaylist(ytResource,appropSongIDs:list[str],link:str,title:str,descr
 				numSongsAdded+=1
 			except googleapiclient.errors.HttpError as error:
 				if 'quota' in error._get_reason():
-					print("Quota limit reached while adding songs to the playlist. Answer the following question:")
-					waitAnswer = ''
-					while waitAnswer!='yes' and waitAnswer!='no' and waitAnswer!='Yes' and waitAnswer!='No':
-						waitAnswer=input("Are you okay with the program sleeping for an hour until it can make more requests to add songs to the playlist? If you answer no, you will receive a list of links to songs that still needed to be added. You can decide to add them yourself or run the program an hour from now and copy and paste it when asked to.")
-					if waitAnswer=='yes' or waitAnswer=='Yes':
+					print("Quota limit reached while adding songs to the playlist.")
+					if addingYTVidsQuotaWait:
 						time.sleep(3600.1-(time.time()-timeOfFirstReq))
 						try:
 							requestPlaylistInsert.execute()

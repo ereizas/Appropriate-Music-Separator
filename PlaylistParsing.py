@@ -7,31 +7,26 @@ import googleapiclient.errors
 import time
 from ytmusicapi import YTMusic
 #Test invalid links given
-#add feature to check if all songs are appropriate, then don't create new playlist
 
-def getAppropSpotifySongs(link:str)->list[str]:
+def getAppropSpotifySongs(link:str)->list[str]|str:
 	"""
-	This function is meant to parse the Spotfiy playlist data for the artists and song titles to help find lyrics and then retrieves the Spotify ids for the appropriate songs and update and return an array with those ids.
+	Parses the Spotfiy playlist data for the artists and song titles to help find lyrics and then returns the Spotify ids for the appropriate songs
 	@param link : link to playlist
 	@return appropSongIds : list with string Spotify ids of the appropriate songs in the playlist
+	@return : str error message on error
 	"""
 	
-	if 'spotify' not in link:
-		return 'Not a valid Spotify link'
 	playlistID, appropSongIds= '', []
 	token = SpotifyOAuth(client_id=config.spotifyClientID,client_secret=config.spotifyClientSecret,scope="playlist-read-private",redirect_uri="https://localhost:8080/callback",username=config.spotifyUserID)
 	spotifyObj = spotipy.Spotify(auth_manager=token)
-	#extracts playlist id from the two types of spotify links
-	if('?' in link):
-		playlistID = link[link.index('playlist/')+9:link.index('?')]
-	else:
-		playlistID = link[link.index('playlist/')+9:]
+	playlistID = StrParsing.getSpotifyPlaylistID(link)
+	if playlistID==None:
+		return "Error: Invalid Spotify link"
 	data = dict()
 	try:
 		data = spotifyObj.playlist_tracks(playlistID,fields=any)
 	except Exception as e:
-		print(e)
-		exit(1)
+		return "Error: " + str(e)
 	#while there are more songs in the playlist to get data from
 	while(data['next']):
 		#refreshes access token if it has expired
@@ -47,8 +42,7 @@ def getAppropSpotifySongs(link:str)->list[str]:
 				try:
 					data = spotifyObj.playlist_tracks(playlistID,fields=any)
 				except Exception as e:
-					print(e)
-					exit(1)
+					return "Error " + str(e)
 				attempts+=1
 				print(data)
 		#indicates whether the variable "metadata" was assigned a message saying that there is suspicious activity coming from the user's IP address as the only element in the array
@@ -61,21 +55,22 @@ def getAppropSpotifySongs(link:str)->list[str]:
 				#conditional in list comprehension prevents featured artists mentioned in the song title from being repeated
 				artists = [artist['name'] for artist in item['track']['artists'] if artist['name'] not in songTitle]
 				azUnusActErrOccurred,reqsSinceLastAZReq = LyricParsing.findAndParseLyrics(artists,songTitle,appropSongIds,item['track']['id'],azUnusActErrOccurred,reqsSinceLastAZReq,'')
+				if type(azUnusActErrOccurred)==None:
+					return "File retrieval error"
 		data = spotifyObj.next(data)
 		
 	return appropSongIds
 
-def getAppropYTSongs(link:str):
+def getAppropYTSongs(link:str,getYTPlaylistReqQuotaWait:bool):
 	"""
-	This function parses the songs in a YouTube playlist for the artists and song title and returns the ids of those songs that are appropriate for children.
+	Parses the songs in a YouTube playlist for the artists and song title and returns the ids of those songs that are appropriate for children
 	@param link : link to YouTube playlist
+	@param getYTPlaylistReqQuotaWait : bool that indicates whether the user wants to wait an hour for quota refill after it runs out by requesting playlist info
 	@return youtube : resource object with necessary credentials stored to read, create and update playlists
 	@return appropSongIDs : list of YouTube ids for videos deemed appropriate for children by the program
 	@return timeOfFirstReq : time in UTC for when the first request was made
 	"""
 
-	if 'youtube' not in link:
-		return 'Not a valid YouTube link','',''
 	#Must copy file name into first parameter
 	flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
 	config.googleClientSecretFileName, scopes=['https://www.googleapis.com/auth/youtube.readonly','https://www.googleapis.com/auth/youtube.force-ssl'])
@@ -98,23 +93,17 @@ def getAppropYTSongs(link:str):
 			response = request.execute()
 		except googleapiclient.errors.HttpError as error:
 			if 'quota' in error._get_reason():
-				print('Quota limit reached while requesting original playlist info. Answer the following question:')
-				#can implement as preemptive checkbox in GUI
-				waitAnswer = ''
-				while waitAnswer!='yes' and waitAnswer!='no' and waitAnswer!='Yes' and waitAnswer!='No':
-					waitAnswer=input("Are you okay with the program sleeping for an hour so that the quota can be refilled for the program to continue?Answer 'yes' or 'no': ")
-				if waitAnswer=='yes' or waitAnswer=='Yes':
+				print('Quota limit has been reached while requesting original playlist info.')
+				if getYTPlaylistReqQuotaWait:
 					print("Waiting for an hour.")
 					time.sleep(3600.1-(time.time()-timeOfFirstReq))
 					print("Done waiting.")
 					try:
 						response = request.execute()
 					except Exception as e:
-						print(e)
-						exit(1)
+						return "Error: " + str(e), None, None
 			else:
-				print(error)
-				exit(1)
+				return "Error: " + str(error), None, None
 		#indicates whether the variable "metadata" was assigned a message saying that there is suspicious activity coming from the user's IP address as the only element in the array
 		azUnusActErrOccurred = False
 		#keeps track the amount of requests since the
@@ -133,26 +122,27 @@ def getAppropYTSongs(link:str):
 						endIndForSongTitleStr=potentialInd
 				songTitle = songTitle[songTitle.find(' - ')+3:endIndForSongTitleStr-1]
 			azUnusActErrOccurred,reqsSinceLastAZReq = LyricParsing.findAndParseLyrics([artists],songTitle,appropSongIDs,item['snippet']['resourceId']['videoId'],azUnusActErrOccurred,reqsSinceLastAZReq,youtube)
+			if type(azUnusActErrOccurred)==None:
+				return "File retrieval error", None, None
 		if 'nextPageToken' in response:
 			nextPageToken=response['nextPageToken']
 	return youtube,appropSongIDs,timeOfFirstReq
 
 def getAppropYTMusicSongs(link:str):
 	"""
-	This function uses the YT Music api to collect artist and song title info from each song in a playlist and returns ids corresponding to songs deemed appropriate.
+	Uses the YT Music api to collect artist and song title info from each song in a playlist and returns ids corresponding to songs deemed appropriate
 	@param link : link to YouTube Music playlist
-	@return
+	@return appropSongIDs : list of YouTube Music ids for songs deemed appropriate for children by the program
+	@returned ytmusic : resource object that can read, create, and edit playlists
 	"""
-	if 'music.youtube' not in link:
-		return 'Not a valid YouTube Music link'
+	
 	appropSongIDs = []
 	data = dict()
 	ytmusic = YTMusic('oauth.json')
 	try:
 		data = ytmusic.get_playlist(StrParsing.getYTPlaylistID(link),limit=None)
 	except Exception as e:
-		print(e)
-		exit(1)
+		return "Error: " + str(e), None
 	#indicates whether the variable "metadata" was assigned a message saying that there is suspicious activity coming from the user's IP address as the only element in the array
 	azUnusActErrOccurred = False
     #keeps track the amount of requests since the
@@ -167,20 +157,16 @@ def getAppropYTMusicSongs(link:str):
 						endIndForSongTitleStr=potentialInd
 		songTitle = songTitle[:endIndForSongTitleStr]
 		azUnusActErrOccurred,reqsSinceLastAZReq = LyricParsing.findAndParseLyrics(artists,songTitle,appropSongIDs,track['videoId'],azUnusActErrOccurred,reqsSinceLastAZReq,ytmusic)
+		if type(azUnusActErrOccurred)==None:
+			return "File retrieval error", None
 	return appropSongIDs,ytmusic
 
-#getAppropYTMusicSongs('https://music.youtube.com/playlist?list=RDCLAK5uy_mfdqvCAl8wodlx2P2_Ai2gNkiRDAufkkI')
-
-def getAppropSouncloudSongs(link):
+#Soundcloud is still working on access to its API (in 2021 they announced that they will figure out another way to start authorizing developer apps instead of a Google form, but they still haven't) and I cannot find any wrappers that can create playlists
+def getAppropSouncloudSongs(link:str):
 	pass
-
+#developer page is not working
 def getAppropPandoraSongs(link):
 	pass
-
-def getAppropFolderSongs(link):
+#Still in beta, so I submitted a request and am waiting to hear back
+def getAppropAmazonMusic(link):
 	pass
-
-def getAppropM3USongs(link):
-	pass
-
-#getAppropYTSongs('https://www.youtube.com/watch?v=lKz-2zIhL6I&list=PL3p01WtxiCCr_4fQ70ZbTqKS_6KyBLo7i')
