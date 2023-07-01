@@ -1,15 +1,34 @@
+def getSpotifyPlaylistID(link:str):
+    """
+    Retrieves playlist ID for Spotify playlist based on link given
+    @param : link to Spotify playlist
+    @return : the Spotify playlist ID on success, otherwise None on failure
+    """
+    try:
+        if('?' in link):
+            return link[link.index('playlist/')+9:link.index('?')]
+        else:
+            return link[link.index('playlist/')+9:]
+    except Exception as e:
+        return None
+
 def getYTPlaylistID(link:str):
-	#given a playlist link from either a specific video on the list (which means the video id is in the playlist link) or just the playlist itself, lastAmpInd will be the needed end index for playlistID
-	lastInd = link.rfind('&')
-	listEqInd = link.find('list=')
-	if(lastInd<listEqInd):
-		lastInd = len(link)
-	return link[listEqInd+5:lastInd]
+    """
+    Retrieves playlist ID for YouTube or YouTube Music playlist based on link given
+    @param link : link to YouTube or YouTube Music playlist
+    """
+	
+    lastInd = link.rfind('&')
+    listEqInd = link.find('list=')
+    if(lastInd<listEqInd):
+        lastInd = len(link)
+    return link[listEqInd+5:lastInd]
 
 def formatArtists(artists:list[str])->str:
     """
     This function formats the artists names in URL format.
     @param artists
+    @return : string formatted for url
     """
     artistsFormatted = []
     for artist in artists:
@@ -28,6 +47,7 @@ def formatSongTitle(songTitle:str)->str:
     """
     This function formats the song title in URL format.
     @param songTitle
+    @return : string formatted for url
     """
     songTitleFormatted = ''
     for char in songTitle:
