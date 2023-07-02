@@ -59,3 +59,14 @@ def formatSongTitle(songTitle:str)->str:
         else:
             songTitleFormatted+=hex(ord(char))
     return songTitleFormatted.replace('0x','%')
+
+def getStrAppropSongIDs(appropSongIDs:list[str],firstInd:int=0):
+    """
+    Returns a string version of song ids to be later inputted into the appropriate part of the GUI
+    @param appropSongIDs : list of song ids deemed appropriate for children
+    @param firstInd : first index of the splice
+    """
+    strAppropSongIDs = ''
+    for id in appropSongIDs[firstInd:]:
+        strAppropSongIDs+=id + ' '
+    return strAppropSongIDs.strip()

@@ -4,7 +4,7 @@ from spotipy.oauth2 import SpotifyOAuth
 import googleapiclient.discovery
 import googleapiclient.errors
 import time
-from StrParsing import getYTPlaylistID, getSpotifyPlaylistID
+from StrParsing import getYTPlaylistID, getSpotifyPlaylistID, getStrAppropSongIDs
 from ytmusicapi import YTMusic
 #trim off quote marks for each id
 def createSpotifyPlaylist(link:str,title:str,descrip:str,appropSongIDs:list[str],username:str):
@@ -35,20 +35,20 @@ def createSpotifyPlaylist(link:str,title:str,descrip:str,appropSongIDs:list[str]
 					#public must be set to False for Spotify to allow editing of the playlist
 					playlistData = spotifyObj.user_playlist_create(user=username,name=title,public=False,description=descrip)
 				except Exception as e:
-					return "Error: " + str(e), str(appropSongIDs)[1:len(str(appropSongIDs))-1], None
+					return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs), None
 				playlistID = playlistData['id']
 			else:
 				playlistID = getSpotifyPlaylistID(link)
 				if playlistID==None:
-					return "Error: Invalid premade playlist link", str(appropSongIDs)[1:len(str(appropSongIDs))-1], None	
+					return "Error: Invalid premade playlist link", getStrAppropSongIDs(appropSongIDs), None	
 			if(len(appropSongIDs)<100):
 					try:
 						spotifyObj.user_playlist_add_tracks(user=username,playlist_id=playlistID,tracks=appropSongIDs)
 					except Exception as e:
 						if not link:
-							return "Error: " + str(e), str(appropSongIDs)[1:len(str(appropSongIDs))-1], 'https://open.spotify.com/playlist/'+playlistData['id']
+							return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs), 'https://open.spotify.com/playlist/'+playlistData['id']
 						else:
-							return "Error: " + str(e), str(appropSongIDs)[1:len(str(appropSongIDs))-1], None
+							return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs), None
 			else:
 					for i in range(int(len(appropSongIDs)/100)):
 						#refreshes access token if it has expired
@@ -61,17 +61,17 @@ def createSpotifyPlaylist(link:str,title:str,descrip:str,appropSongIDs:list[str]
 							spotifyObj.user_playlist_add_tracks(user=username,playlist_id=playlistID,tracks=appropSongIDs[i*100:i*100+100])
 						except Exception as e:
 							if not link:
-								return "Error: " + str(e), str(appropSongIDs[i*100:])[1:len(str(appropSongIDs[i*100:]))-1], 'https://open.spotify.com/playlist/'+playlistData['id']
+								return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs,i*100), 'https://open.spotify.com/playlist/'+playlistData['id']
 							else:
-								return "Error: " + str(e), str(appropSongIDs[i*100:])[1:len(str(appropSongIDs[i*100:]))-1], None
+								return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs,i*100), None
 					if len(appropSongIDs)%100!=0:
 						try:
 							spotifyObj.user_playlist_add_tracks(user=username,playlist_id=playlistID,tracks=appropSongIDs[int(len(appropSongIDs)/100)*100:])
 						except Exception as e:
 							if not link:
-								return "Error: " + str(e), str(appropSongIDs[int(len(appropSongIDs)/100)*100:])[1:len(str(appropSongIDs[int(len(appropSongIDs)/100)*100:]))-1], 'https://open.spotify.com/playlist/'+playlistData['id']
+								return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs,int(len(appropSongIDs)/100)*100), 'https://open.spotify.com/playlist/'+playlistData['id']
 							else:
-								return "Error: " + str(e), str(appropSongIDs[int(len(appropSongIDs)/100)*100:])[1:len(str(appropSongIDs[int(len(appropSongIDs)/100)*100:]))-1], None
+								return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs,int(len(appropSongIDs)/100)*100), None
 			return "Check your playlists", None, None
 	else:
 			return "There are no appropriate songs in the given playlist.", None, None
@@ -128,15 +128,15 @@ def createYTPlaylist(ytResource,appropSongIDs:list[str],link:str,title:str,descr
 							playlistCreateResponse = requestPlaylistCreate.execute()
 							playlistID = playlistCreateResponse['id']
 						except Exception as e:
-							return "Error: " + str(e), str(appropSongIDs)[1:len(str(appropSongIDs))-1], None
+							return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs), None
 					else:
-						return str(appropSongIDs)[1:len(str(appropSongIDs))-1], None, None
+						return getStrAppropSongIDs(appropSongIDs), None, None
 				else:
-					return "Error: " + str(error), str(appropSongIDs)[1:len(str(appropSongIDs))-1], None
+					return "Error: " + str(error), getStrAppropSongIDs(appropSongIDs), None
 		else:
 			playlistID=getYTPlaylistID(link)
 			if playlistID==None:
-				return 'Error: Invalid premade playlist link', str(appropSongIDs)[1:len(str(appropSongIDs))-1], None
+				return 'Error: Invalid premade playlist link', getStrAppropSongIDs(appropSongIDs), None
 		for id in appropSongIDs:
 			requestPlaylistInsert = ytResource.playlistItems().insert(
 			part="snippet",
@@ -162,15 +162,15 @@ def createYTPlaylist(ytResource,appropSongIDs:list[str],link:str,title:str,descr
 						try:
 							requestPlaylistInsert.execute()
 						except Exception as e:
-							return "Error: " + str(e), str(appropSongIDs[numSongsAdded-1:])[1:len(str(appropSongIDs[numSongsAdded-1:]))-1],'https://www.youtube.com/playlist?list='+playlistID
+							return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs,numSongsAdded-1),'https://www.youtube.com/playlist?list='+playlistID
 					else:
 						print("You can add an id to the end of 'https://youtube.com/watch?v=' to find the corresponding video.\n")
 						#returns ids for videos left to add to the playlist starting at numSongsAdded-1 to avoid repeats
-						return str(appropSongIDs[numSongsAdded-1:])[1:len(str(appropSongIDs[numSongsAdded-1:]))-1], None, 'https://www.youtube.com/playlist?list='+playlistID
+						return getStrAppropSongIDs(appropSongIDs,numSongsAdded-1), None, 'https://www.youtube.com/playlist?list='+playlistID
 				else:
-					return "Error: " + str(e), str(appropSongIDs[numSongsAdded-1:])[1:len(str(appropSongIDs[numSongsAdded-1:]))-1], 'https://www.youtube.com/playlist?list='+playlistID
+					return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs,numSongsAdded-1), 'https://www.youtube.com/playlist?list='+playlistID
 			except Exception as e:
-				return "Error: " + str(e), str(appropSongIDs[numSongsAdded-1:])[1:len(str(appropSongIDs[numSongsAdded-1:]))-1], 'https://www.youtube.com/playlist?list='+playlistID
+				return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs,numSongsAdded-1), 'https://www.youtube.com/playlist?list='+playlistID
 		return "Check your playlists.", None, None
 	else:
 		return "There are no appropriate songs in the given playlist.", None, None
@@ -190,14 +190,14 @@ def createYTMusicPlaylist(ytMusicResource:YTMusic,appropSongIDs:list[str],link:s
 			ytMusicResource.create_playlist(title,descrip,status,appropSongIDs)
 			return 'Check your playlists', None
 		except Exception as e:
-			return "Error: " + str(e), str(appropSongIDs)[1:len(str(appropSongIDs))-1]
+			return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs)
 	else:
 		try:
 			playlistID = getYTPlaylistID(link)
 			if playlistID==None:
-				return 'Error: Invalid premade playlist link', str(appropSongIDs)[1:len(str(appropSongIDs))-1]
+				return 'Error: Invalid premade playlist link', getStrAppropSongIDs(appropSongIDs)
 			#duplicates will be allowed as to not cause error and to speed up the program, but as long as the playlist does not have any songs added by the user (if a premade playlist is inputted), then there should not be any duplicates
 			ytMusicResource.add_playlist_items(getYTPlaylistID(link),appropSongIDs,duplicates=True)
 			return 'Check your playlist', None
 		except Exception as e:
-			return "Error: " + str(e),str(appropSongIDs)[1:len(str(appropSongIDs))-1]
+			return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs)
