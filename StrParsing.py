@@ -18,11 +18,14 @@ def getYTPlaylistID(link:str):
     @param link : link to YouTube or YouTube Music playlist
     """
 	
-    lastInd = link.rfind('&')
-    listEqInd = link.find('list=')
-    if(lastInd<listEqInd):
-        lastInd = len(link)
-    return link[listEqInd+5:lastInd]
+    try:
+        lastInd = link.rfind('&')
+        listEqInd = link.find('list=')
+        if(lastInd<listEqInd):
+            lastInd = len(link)
+        return link[listEqInd+5:lastInd]
+    except:
+        return None
 
 def formatArtists(artists:list[str])->str:
     """

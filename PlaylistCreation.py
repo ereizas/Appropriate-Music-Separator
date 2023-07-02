@@ -40,7 +40,7 @@ def createSpotifyPlaylist(link:str,title:str,descrip:str,appropSongIDs:list[str]
 			else:
 				playlistID = getSpotifyPlaylistID(link)
 				if playlistID==None:
-					return "Error: Invalid link", str(appropSongIDs)[1:len(str(appropSongIDs))-1], None	
+					return "Error: Invalid premade playlist link", str(appropSongIDs)[1:len(str(appropSongIDs))-1], None	
 			if(len(appropSongIDs)<100):
 					try:
 						spotifyObj.user_playlist_add_tracks(user=username,playlist_id=playlistID,tracks=appropSongIDs)
@@ -135,6 +135,8 @@ def createYTPlaylist(ytResource,appropSongIDs:list[str],link:str,title:str,descr
 					return "Error: " + str(error), str(appropSongIDs)[1:len(str(appropSongIDs))-1], None
 		else:
 			playlistID=getYTPlaylistID(link)
+			if playlistID==None:
+				return 'Error: Invalid premade playlist link', str(appropSongIDs)[1:len(str(appropSongIDs))-1], None
 		for id in appropSongIDs:
 			requestPlaylistInsert = ytResource.playlistItems().insert(
 			part="snippet",
@@ -191,6 +193,9 @@ def createYTMusicPlaylist(ytMusicResource:YTMusic,appropSongIDs:list[str],link:s
 			return "Error: " + str(e), str(appropSongIDs)[1:len(str(appropSongIDs))-1]
 	else:
 		try:
+			playlistID = getYTPlaylistID(link)
+			if playlistID==None:
+				return 'Error: Invalid premade playlist link', str(appropSongIDs)[1:len(str(appropSongIDs))-1]
 			#duplicates will be allowed as to not cause error and to speed up the program, but as long as the playlist does not have any songs added by the user (if a premade playlist is inputted), then there should not be any duplicates
 			ytMusicResource.add_playlist_items(getYTPlaylistID(link),appropSongIDs,duplicates=True)
 			return 'Check your playlist', None
