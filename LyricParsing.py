@@ -2,14 +2,14 @@ import requests, config, StrParsing
 from lyricsgenius import Genius
 import azapi
 from youtube_transcript_api import YouTubeTranscriptApi
-import traceback
+from traceback import format_exc
 #declared globally to allow fair cycling and easing of the workload of lyrics apis in findAndParseLyrics()
 lyricParsersInd = 0
-def getInappropWordList(file: str)->list[str]:
+def getInappropWordList(file: str)->list[str]|None:
     """
     Decrypts the Vigenere cypher and returns a list of the inappropriate words to look for
     @param file : name of the file with the encrypted words
-    @return inappropWordList
+    @return inappropWordList on success or None on error
     """
 
     inappropWordList = []
@@ -42,7 +42,7 @@ def parseLyristLyrics(strArtists: str,songTitleFormatted: str,inappropWordList: 
     try:
         response = requests.get('https://lyrist.vercel.app/api/' + songTitleFormatted + '/' + strArtists)
     except Exception as e:
-        print(e)
+        print('This error will not stop the program. This is only appearing to reveal how the lyric APIs are working. Error: ' + str(e))
         return None
     lyrics = ''
     #if status_code is valid
@@ -82,7 +82,7 @@ def parseGeniusLyrics(artists: list, songTitle: str, inappropWordList: list[str]
     try:
         song = genius.search_song(title=songTitle,artist=artists,get_full_info=False)
     except Exception as e:
-        print(e)
+        print('This error will not stop the program. This is only appearing to reveal how the lyric APIs are working. Error: ' + str(e))
         return None
     if(song!=None):
         for word in inappropWordList:
@@ -111,9 +111,9 @@ def parseAZLyrics(artists: list, songTitle: str,inappropWordList: list[str]):
     try:
         lyrics=api.getLyrics() 
     except Exception as e:
-        print(e)
+        print('This error will not stop the program. This is only appearing to reveal how the lyric APIs are working. Error: ' + str(e))
         #This accounts for when instead of normal metadata being returned, an array with one element is returned saying that there has been unusual activity coming from the IP address of the user.
-        if 'metadata[1]' in traceback.format_exc():
+        if 'metadata[1]' in format_exc():
             return None,True
         return None,False
     #if the retrieval of lyrics did not fail
@@ -142,7 +142,7 @@ def parseYTTranscript(id:str, inappropWordList:list[str]):
         return False
     #later do except (error name) for language unavailable errors and other recoverable errors
     except Exception as e:
-        print(e)
+        print('This error will not stop the program. This is only appearing to reveal how the lyric APIs are working. Error: ' + str(e))
         return None
 
 def findAndParseLyrics(artists:list, songTitle:str, appropSongIDs:list, id:str, azUnusActErrOccurred:bool,reqsSinceLastAZReq:int,ytResource):
@@ -152,9 +152,11 @@ def findAndParseLyrics(artists:list, songTitle:str, appropSongIDs:list, id:str, 
     @param songTitle
     @param appropSongIDs : list of ids for a certain platform for appropriate songs 
     @param id : id given by a certain platform for the song
+    @param azUnusActErrOccurred : boolean for if the AZ Lyric API libary variable "metadata" has a message about unusual activity as its first element
+    @param reqsSinceLastAZReq : number of requests since the last AZ API request
+    @param ytResource : YouTube object with the necessary credentials to request data from the YouTube API
     @return azUnusActErrOccurred : boolean for if the AZ Lyric API libary variable "metadata" has a message about unusual activity as its first element
     @return reqsSinceLastAZReq : number of requests since the last AZ API request
-    @param ytResource : YouTube object with the necessary credentials to request data from the YouTube API
     """
     inappropWordList = getInappropWordList("InappropriateWords.txt")
     if inappropWordList==None:
