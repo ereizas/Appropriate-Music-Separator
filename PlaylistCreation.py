@@ -3,7 +3,7 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import googleapiclient.discovery
 import googleapiclient.errors
-import time
+from time import time, sleep
 from StrParsing import getYTPlaylistID, getSpotifyPlaylistID, getStrAppropSongIDs
 from ytmusicapi import YTMusic
 #trim off quote marks for each id
@@ -76,7 +76,7 @@ def createSpotifyPlaylist(link:str,title:str,descrip:str,appropSongIDs:list[str]
 	else:
 			return "There are no appropriate songs in the given playlist.", None, None
 
-def createYTPlaylist(ytResource,appropSongIDs:list[str],link:str,title:str,descrip:str,status:str,timeOfFirstReq:float,postYTLyricAnalysisQuotaWait:bool,addingYTVidsQuotaWait:bool):
+def createYTPlaylist(ytResource,appropSongIDs:list[str],link:str,title:str,descrip:str,private:bool,timeOfFirstReq:float,postYTLyricAnalysisQuotaWait:bool,addingYTVidsQuotaWait:bool):
 	"""
 	Creates or edits a YouTube playlist and adds videos with the ids listed in appropSongIDs
 	@param ytResource : YouTube object with the necessary credentials to read, create, and update a playlist
@@ -84,12 +84,12 @@ def createYTPlaylist(ytResource,appropSongIDs:list[str],link:str,title:str,descr
 	@param link : link for premade playlist or empty string if not given a link
 	@param title : title that the user wants the playlist to have
 	@param descrip : description for the playlist that the user desires
-	@param status : string indicating whether the playlist will be public or private
+	@param private : boolean indicating whether the user wants the playlist to be private
 	@param timeOfFirstReq : float that indicates how much time has passed since the first request to YouTube Data API
 	@param postYTLyricAnalysisQuotaWait : bool that indicates whether the user wants to wait an hour if the quota has been depleted after lyric analysis (when the program is ready to create the playlist)
 	@param addingYTVidsQuotaWait : bool that indicates whether the user wants to wait an hour if the quota has been depleted by adding a song to the new or premade playlist
-	@return : str error message on error that is not because of the quota becoming empty or the rest of the ids to be added if the user does not want to wait an hour
-	@return : the rest of the ids to be added or None if the user does not want to wait for the quota to refill or on success
+	@return : str message that indicates that there are no appropriate songs or to check playlists on success, None if the user immediately wants the remaining appopriate song IDs or str error message on failure
+	@return : the rest of the ids to be added or None on success
 	@return : link to playlist if new one was created and error occurred, otherwise None
 	"""
 
@@ -109,7 +109,7 @@ def createYTPlaylist(ytResource,appropSongIDs:list[str],link:str,title:str,descr
 						"defaultLanguage": "en"
 					},
 					"status": {
-						"privacyStatus": status
+						"privacyStatus": 'private' if private else 'public'
 					}
 				}
 			)
@@ -119,18 +119,19 @@ def createYTPlaylist(ytResource,appropSongIDs:list[str],link:str,title:str,descr
 				playlistID = playlistCreateResponse['id']
 			except googleapiclient.errors.HttpError as error:
 				if 'quota' in error._get_reason():
-					print("Lyric analysis completed. Quota limit reached.\n")
+					print("Lyric analysis completed. Quota limit reached.")
 					if postYTLyricAnalysisQuotaWait:
-						print("Waiting for an hour.\n")
-						time.sleep(3600.1-(time.time()-timeOfFirstReq))
-						print("Done waiting.\n")
+						print("Waiting for an hour.")
+						sleep(3600.1-(time()-timeOfFirstReq))
+						print("Done waiting.")
 						try:
 							playlistCreateResponse = requestPlaylistCreate.execute()
 							playlistID = playlistCreateResponse['id']
 						except Exception as e:
 							return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs), None
 					else:
-						return getStrAppropSongIDs(appropSongIDs), None, None
+						print("You can add an id to the end of 'https://youtube.com/watch?v=' to find the corresponding video.")
+						return None,getStrAppropSongIDs(appropSongIDs), None
 				else:
 					return "Error: " + str(error), getStrAppropSongIDs(appropSongIDs), None
 		else:
@@ -156,17 +157,17 @@ def createYTPlaylist(ytResource,appropSongIDs:list[str],link:str,title:str,descr
 				numSongsAdded+=1
 			except googleapiclient.errors.HttpError as error:
 				if 'quota' in error._get_reason():
-					print("Quota limit reached while adding songs to the playlist.\n")
+					print("Quota limit reached while adding songs to the playlist.")
 					if addingYTVidsQuotaWait:
-						time.sleep(3600.1-(time.time()-timeOfFirstReq))
+						sleep(3600.1-(time()-timeOfFirstReq))
 						try:
 							requestPlaylistInsert.execute()
 						except Exception as e:
 							return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs,numSongsAdded-1),'https://www.youtube.com/playlist?list='+playlistID
 					else:
-						print("You can add an id to the end of 'https://youtube.com/watch?v=' to find the corresponding video.\n")
+						print("You can add an id to the end of 'https://youtube.com/watch?v=' to find the corresponding video.")
 						#returns ids for videos left to add to the playlist starting at numSongsAdded-1 to avoid repeats
-						return getStrAppropSongIDs(appropSongIDs,numSongsAdded-1), None, 'https://www.youtube.com/playlist?list='+playlistID
+						return None, getStrAppropSongIDs(appropSongIDs,numSongsAdded-1), 'https://www.youtube.com/playlist?list='+playlistID
 				else:
 					return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs,numSongsAdded-1), 'https://www.youtube.com/playlist?list='+playlistID
 			except Exception as e:
@@ -175,19 +176,19 @@ def createYTPlaylist(ytResource,appropSongIDs:list[str],link:str,title:str,descr
 	else:
 		return "There are no appropriate songs in the given playlist.", None, None
 
-def createYTMusicPlaylist(ytMusicResource:YTMusic,appropSongIDs:list[str],link:str,title:str,descrip:str,status:str):
+def createYTMusicPlaylist(ytMusicResource:YTMusic,appropSongIDs:list[str],link:str,title:str,descrip:str,private:bool):
 	"""
 	Creates or edits a YouTube music playlist and adds the songs with the ids listed in appropSongIDs to the playlist
 	@param ytMusicResource : resource object that can request the creation and editing of playlists
 	@param link : link to existing playlist that the user wants the songs added to
 	@param descrip : description for the new playlist that the user wants add
-	@param status : string with values "PUBLIC" or "PRIVATE" to indicate whether they want the new playlist to be public
+	@param status : bool indicating whether the user wants the new playlist to be private
 	@return : 'Check your playlists' on success, str error message on error
 	@return : None on success, the appropriate song ids that still need to be added on failure
 	"""
 	if not link:
 		try:
-			ytMusicResource.create_playlist(title,descrip,status,appropSongIDs)
+			ytMusicResource.create_playlist(title,descrip,'PRIVATE' if private else 'PUBLIC',appropSongIDs)
 			return 'Check your playlists', None
 		except Exception as e:
 			return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs)
