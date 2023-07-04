@@ -4,9 +4,7 @@ from spotipy.oauth2 import SpotifyOAuth
 import google_auth_oauthlib.flow
 import googleapiclient.discovery
 import googleapiclient.errors
-import time
 from ytmusicapi import YTMusic
-#Test invalid links given
 
 def getAppropSpotifySongs(link:str)->list[str]|str:
 	"""
@@ -61,14 +59,12 @@ def getAppropSpotifySongs(link:str)->list[str]|str:
 		
 	return appropSongIds
 
-def getAppropYTSongs(link:str,getYTPlaylistReqQuotaWait:bool):
+def getAppropYTSongs(link:str):
 	"""
 	Parses the songs in a YouTube playlist for the artists and song title and returns the ids of those songs that are appropriate for children
 	@param link : link to YouTube playlist
-	@param getYTPlaylistReqQuotaWait : bool that indicates whether the user wants to wait an hour for quota refill after it runs out by requesting playlist info
-	@return youtube : resource object with necessary credentials stored to read, create and update playlists
-	@return appropSongIDs : list of YouTube ids for videos deemed appropriate for children by the program
-	@return timeOfFirstReq : time in UTC for when the first request was made
+	@return : resource object with necessary credentials stored to read, create and update playlists on success, str error message on failure
+	@return appropSongIDs : list of YouTube ids for videos deemed appropriate for children by the program on success, None on failure
 	"""
 
 	#Must copy file name into first parameter
@@ -78,7 +74,6 @@ def getAppropYTSongs(link:str,getYTPlaylistReqQuotaWait:bool):
 	youtube = googleapiclient.discovery.build('youtube', 'v3', credentials=credentials)
 	appropSongIDs = []
 	nextPageToken = ''
-	timeOfFirstReq = 0
 	response = 'nextPageToken'
 	while 'nextPageToken' in response:
 		request = youtube.playlistItems().list(
@@ -87,23 +82,10 @@ def getAppropYTSongs(link:str,getYTPlaylistReqQuotaWait:bool):
 			playlistId=StrParsing.getYTPlaylistID(link),
 			pageToken = nextPageToken
 		)
-		if not timeOfFirstReq:
-			timeOfFirstReq=time.time()
 		try:
 			response = request.execute()
-		except googleapiclient.errors.HttpError as error:
-			if 'quota' in error._get_reason():
-				print('Quota limit has been reached while requesting original playlist info.')
-				if getYTPlaylistReqQuotaWait:
-					print("Waiting for an hour.")
-					time.sleep(3600.1-(time.time()-timeOfFirstReq))
-					print("Done waiting.")
-					try:
-						response = request.execute()
-					except Exception as e:
-						return "Error: " + str(e), None, None
-			else:
-				return "Error: " + str(error), None, None
+		except Exception as e:
+			return "Error: " + str(e), None, None
 		#indicates whether the variable "metadata" was assigned a message saying that there is suspicious activity coming from the user's IP address as the only element in the array
 		azUnusActErrOccurred = False
 		#keeps track the amount of requests since the
@@ -126,7 +108,7 @@ def getAppropYTSongs(link:str,getYTPlaylistReqQuotaWait:bool):
 				return "File retrieval error", None, None
 		if 'nextPageToken' in response:
 			nextPageToken=response['nextPageToken']
-	return youtube,appropSongIDs,timeOfFirstReq
+	return youtube,appropSongIDs
 
 def getAppropYTMusicSongs(link:str):
 	"""

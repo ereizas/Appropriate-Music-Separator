@@ -22,18 +22,14 @@ class GUI():
         self.newLink = StringVar()
         self.playlistTitle = StringVar()
         self.descrip = StringVar()
-        self.buildGeneralGUI(generalFrame,self.prevRunAppropIDs,self.newLink,self.playlistTitle,self.descrip)
-
-        ytOptionsFrame = ttk.Frame(self.__root)
-        ytOptionsFrame.pack(padx=5,pady=5)
         #need to decide upper or lower case based on whether YT or YT Music is selected
         self.private = BooleanVar()
-        
+        self.buildGeneralGUI(generalFrame,self.prevRunAppropIDs,self.newLink,self.playlistTitle,self.descrip,self.private)
         endFrame = ttk.Frame(self.__root)
         endFrame.pack(padx=5,pady=5)
         self.buildEndFrame(endFrame)
 
-    def buildGeneralGUI(self,master,prevRunAppropIDs,newLink,playlistTitle,descrip):
+    def buildGeneralGUI(self,master,prevRunAppropIDs,newLink,playlistTitle,descrip,private):
         """
         Builds the part of the GUI that applies for all types of playlists
         """
@@ -87,11 +83,11 @@ class GUI():
                 else:
                     self.outputTextBox.insert(END,message+'\n\n')
         elif streamingService=='YouTube':
-            ytGetRet, appropSongIDs, timeOfFirstReq = PlaylistParsing.getAppropYTSongs(self.linkEntry.get())
+            ytGetRet, appropSongIDs = PlaylistParsing.getAppropYTSongs(self.linkEntry.get())
             if appropSongIDs==None:
                 self.outputTextBox.insert(END, ytGetRet+'\n\n')
             else:
-                message, remainingAppropSongIDs, link = PlaylistCreation.createYTPlaylist(ytGetRet,appropSongIDs,self.premadePlaylistLinkEntry.get(),self.titleEntry.get(),self.descripEntry.get(),self.private.get(),timeOfFirstReq)
+                message, remainingAppropSongIDs, link = PlaylistCreation.createYTPlaylist(ytGetRet,appropSongIDs,self.premadePlaylistLinkEntry.get(),self.titleEntry.get(),self.descripEntry.get(),self.private.get())
                 if type(message)==str and type(remainingAppropSongIDs)==str:
                     self.outputTextBox.insert(END,message+'\n\nRemaining Appropriate Song IDs: '+remainingAppropSongIDs+'\n\n'+link+'\n\n')
                 elif remainingAppropSongIDs==None:
