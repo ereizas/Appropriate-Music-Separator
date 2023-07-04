@@ -46,12 +46,12 @@ def parseLyristLyrics(strArtists: str,songTitleFormatted: str,inappropWordList: 
         return None
     lyrics = ''
     #if status_code is valid
-    if(response.status_code>199 and response.status_code<300):
+    if response.status_code>199 and response.status_code<300:
         data = response.json()
         if('lyrics' in data):
             lyrics=data['lyrics']
-            for word in inappropWordList:
-                if word in lyrics:
+            for phrase in inappropWordList:
+                if phrase in lyrics:
                     return True
             return False
         else:
@@ -73,22 +73,25 @@ def parseGeniusLyrics(artists: list, songTitle: str, inappropWordList: list[str]
     'client_id': config.geniusClientID,
     'client_secret': config.geniusClientSecret,
     })
-    authResponseData = authResponse.json()
-    accessToken = authResponseData['access_token']
-    genius = Genius(access_token=accessToken,timeout=5,retries=3,verbose=False)
-    song = None
-    #added the .join() here so that it would not alter artists for if parseLyristLyrics() needs the formatted string after if this function fails (returns None)
-    artists = ' '.join(artists)
-    try:
-        song = genius.search_song(title=songTitle,artist=artists,get_full_info=False)
-    except Exception as e:
-        print('This error will not stop the program. This is only appearing to reveal how the lyric APIs are working. Error: ' + str(e))
-        return None
-    if(song!=None):
-        for word in inappropWordList:
-            if word in song.lyrics:
-                return True
-        return False
+    if authResponse.status_code>199 and authResponse.status_code<300:
+        authResponseData = authResponse.json()
+        accessToken = authResponseData['access_token']
+        genius = Genius(access_token=accessToken,timeout=5,retries=3,verbose=False)
+        song = None
+        #added the .join() here so that it would not alter artists for if parseLyristLyrics() needs the formatted string after if this function fails (returns None)
+        artists = ' '.join(artists)
+        try:
+            song = genius.search_song(title=songTitle,artist=artists,get_full_info=False)
+        except Exception as e:
+            print('This error will not stop the program. This is only appearing to reveal how the lyric APIs are working. Error: ' + str(e))
+            return None
+        if(song!=None):
+            for phrase in inappropWordList:
+                if phrase in song.lyrics:
+                    return True
+            return False
+        else:
+            return None
     else:
         return None
 
@@ -111,15 +114,15 @@ def parseAZLyrics(artists: list, songTitle: str,inappropWordList: list[str]):
     try:
         lyrics=api.getLyrics() 
     except Exception as e:
-        print('This error will not stop the program. This is only appearing to reveal how the lyric APIs are working. Error: ' + str(e))
+        print('This error will not stop the program. This is only appearing to reveal how the lyric APIs are working. Error: ' + str(e),flush=True)
         #This accounts for when instead of normal metadata being returned, an array with one element is returned saying that there has been unusual activity coming from the IP address of the user.
         if 'metadata[1]' in format_exc():
             return None,True
         return None,False
     #if the retrieval of lyrics did not fail
     if type(lyrics) != int:
-            for word in inappropWordList:
-                if word in lyrics:
+            for phrase in inappropWordList:
+                if phrase in lyrics:
                     return True, False
             return False, False
     else:
@@ -135,9 +138,9 @@ def parseYTTranscript(id:str, inappropWordList:list[str]):
     
     try:
         transcript = YouTubeTranscriptApi.get_transcript(id)
-        for word in inappropWordList:
+        for phrase in inappropWordList:
             for blurb in transcript:
-                if word in blurb['text']:
+                if phrase in blurb['text']:
                     return True
         return False
     #later do except (error name) for language unavailable errors and other recoverable errors
