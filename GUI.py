@@ -1,8 +1,8 @@
 import PlaylistParsing, PlaylistCreation, config
 from tkinter import *
 from tkinter import ttk
-import sys
-
+import sys, threading
+#add conditional for if appropSongIDs is inputted
 class GUI():
     def __init__(self,root):
         #bool for whether GUI is running
@@ -28,11 +28,6 @@ class GUI():
         ytOptionsFrame.pack(padx=5,pady=5)
         #need to decide upper or lower case based on whether YT or YT Music is selected
         self.private = BooleanVar()
-        #options for whether the user wants to wait an hour for the YT API quota to refill if it runs out at the steps in the names of the following three variables
-        self.getYTPlaylistReqQuotaWait = BooleanVar()
-        self.postYTLyricAnalysisQuotaWait = BooleanVar()
-        self.addingYTVidsQuotaWait = BooleanVar()
-        self.buildYTOptions(ytOptionsFrame,self.private,self.getYTPlaylistReqQuotaWait,self.postYTLyricAnalysisQuotaWait,self.addingYTVidsQuotaWait)
         
         endFrame = ttk.Frame(self.__root)
         endFrame.pack(padx=5,pady=5)
@@ -62,53 +57,59 @@ class GUI():
         ttk.Label(master,text="Enter a description for the new playlist (optional):").grid(row=11,column=0)
         self.descripEntry = ttk.Entry(master,width=50,textvariable=descrip)
         self.descripEntry.grid(row=12,column=0)
-        #add "Separate Appropriate Music" button after YT options if possible
-    
-    def buildYTOptions(self,master,private,getYTPlaylistReqQuotaWait,postYTLyricAnalysisQuotaWait,addingYTVidsQuotaWait):
-        """
-        Builds YT specific checkbox options
-        """
-
         self.privateCheckbutton = ttk.Checkbutton(master,text='Check this if you want the playlist to be private (YouTube and YouTube Music only)',variable=private)
         self.privateCheckbutton.grid(row=0,column=0)
-        ttk.Label(master,text='The following options are for YouTube (not YouTube Music) playlists only (read the paragraph before the steps in the YouTube setup section of the README.md file for a review of the quota limit and cost):').grid(row=1,column=0)
-        self.playlistReqQuotaWaitCheckbutton = ttk.Checkbutton(master,text='Check this if you are okay with waiting an hour for the request quota to refill after it has ran out while requesting information from the original playlist (recommended for large playlists of about a few hundred songs)',variable=getYTPlaylistReqQuotaWait)
-        self.playlistReqQuotaWaitCheckbutton.grid(row=2,column=0,pady=3)
-        self.lyricAnalysisQuotaWaitCheckbutton = ttk.Checkbutton(master,text='Check this if you are okay with waiting an hour for quota to refill if it ran out after analyzing the lyrics of all the songs. *If unchecked, the program will return a list of ids that you can input to speed up the next run (which will still have to be in an hour).',variable=postYTLyricAnalysisQuotaWait)
-        self.lyricAnalysisQuotaWaitCheckbutton.grid(row=3,column=0,pady=3)
-        self.ytVidsQuotaWaitCheckbutton = ttk.Checkbutton(master,text='Check this if you are okay with waiting an hour for quota refill after it ran out from adding videos to the new playlist. *If unchecked, the program will return a list of the rest of the ids that need to be added.',variable=addingYTVidsQuotaWait)
-        self.ytVidsQuotaWaitCheckbutton.grid(row=4,column=0,pady=3)
-    
+        
     def separatePlaylist(self):
-        #clears the output text box
-        if self.outputTextBox.get('1.0',END):
-            self.outputTextBox.delete('1.0',END)
-        self.outputTextBox.insert(END,"Processing playlist, make sure to check the command line/terminal (For Windows: PowerShell) that you ran this on for any updates.\n")
+        self.outputTextBox.insert(END,"Processing playlist, make sure to check the command line/terminal (For Windows: PowerShell) that you ran this on for any updates.\n\n")
         streamingService = self.streamingServiceDropDown.get()
         if streamingService=='Spotify':
             spotifyGetRet = PlaylistParsing.getAppropSpotifySongs(self.linkEntry.get())
             if type(spotifyGetRet)==str:
-                self.outputTextBox.insert(END,str(spotifyGetRet)+'\n')
+                self.outputTextBox.insert(END,str(spotifyGetRet)+'\n\n')
             else:
                 message, strAppropSongIDs, newLink = PlaylistCreation.createSpotifyPlaylist(self.premadePlaylistLinkEntry.get(),self.titleEntry.get(),self.descripEntry.get(),spotifyGetRet,config.spotifyUserID)
                 if 'Error:' in message:
                     outputTBMessage = message + " Appropriate Song IDs: " + strAppropSongIDs
                     if newLink:
                         outputTBMessage+=newLink
-                    self.outputTextBox.insert(END,outputTBMessage)
+                    self.outputTextBox.insert(END,outputTBMessage+'\n\n')
                 else:
-                    self.outputTextBox.insert(END,message)
+                    self.outputTextBox.insert(END,message + '\n\n')
         elif streamingService=='YouTube Music':
-            pass
+            ytMusicGetRet,ytMusicResource = PlaylistParsing.getAppropYTMusicSongs(self.linkEntry.get())
+            if ytMusicResource==None:
+                self.outputTextBox.insert(END,ytMusicGetRet+'\n\n')
+            else:
+                message, remainingAppropSongIDs = PlaylistCreation.createYTMusicPlaylist(ytMusicResource,ytMusicGetRet,self.premadePlaylistLinkEntry.get(),self.titleEntry.get(),self.descripEntry.get(),self.private.get())
+                if remainingAppropSongIDs != None:
+                    self.outputTextBox.insert(END,message + '\n\nRemaining Appropriate Song IDs: ' + remainingAppropSongIDs + '\n\n')
+                else:
+                    self.outputTextBox.insert(END,message+'\n\n')
         elif streamingService=='YouTube':
-            pass
+            ytGetRet, appropSongIDs, timeOfFirstReq = PlaylistParsing.getAppropYTSongs(self.linkEntry.get())
+            if appropSongIDs==None:
+                self.outputTextBox.insert(END, ytGetRet+'\n\n')
+            else:
+                message, remainingAppropSongIDs, link = PlaylistCreation.createYTPlaylist(ytGetRet,appropSongIDs,self.premadePlaylistLinkEntry.get(),self.titleEntry.get(),self.descripEntry.get(),self.private.get(),timeOfFirstReq)
+                if type(message)==str and type(remainingAppropSongIDs)==str:
+                    self.outputTextBox.insert(END,message+'\n\nRemaining Appropriate Song IDs: '+remainingAppropSongIDs+'\n\n'+link+'\n\n')
+                elif remainingAppropSongIDs==None:
+                    self.outputTextBox.insert(END,message+'\n\n')
+                else:
+                    self.outputTextBox.insert(END,'Remaining Appropriate Song IDs: '+remainingAppropSongIDs+'\n\n')
         else:
-            self.outputTextBox.insert(END,'The streaming service entered is either not available or not valid.')
+            self.outputTextBox.insert(END,'The streaming service entered is either not available or not valid.\n\n')
+        print('Done.')
+
+    def runSongSeparatorThread(self):
+        threading.Thread(target=self.separatePlaylist).start()
+
     
     def buildEndFrame(self,master):
-        self.separateButton = ttk.Button(master,text='Separate Appropriate Music',command=self.separatePlaylist)
+        self.separateButton = ttk.Button(master,text='Separate Appropriate Music',command=self.runSongSeparatorThread)
         self.separateButton.grid(row=0,column=0)   
-        ttk.Label(master,text='Output:').grid(row=1,column=0)
+        ttk.Label(master,text='Output (Ignore any messages about subtitles and transcripts):').grid(row=1,column=0)
         self.outputTextBox = Text(master,width=150,height=15)
         self.outputTextBox.grid(row=2,column=0)
         sys.stdout = TextRedirector(self.outputTextBox,'stdout')
@@ -124,7 +125,7 @@ class TextRedirector(object):
 
     def write(self,text):
         self.widget.configure(state='normal')
-        self.widget.insert('end',text,(self.tag),)
+        self.widget.insert('end',text,(self.tag,))
     #created to avoid the exception that appears when there is no flush method
     def flush(self):
         pass
