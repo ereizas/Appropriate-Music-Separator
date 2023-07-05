@@ -63,11 +63,9 @@ def getAppropYTSongs(link:str):
 	"""
 	Parses the songs in a YouTube playlist for the artists and song title and returns the ids of those songs that are appropriate for children
 	@param link : link to YouTube playlist
-	@return : resource object with necessary credentials stored to read, create and update playlists on success, str error message on failure
-	@return appropSongIDs : list of YouTube ids for videos deemed appropriate for children by the program on success, None on failure
+	@return : list of YouTube ids for videos deemed appropriate for children by the program on success, None on failure
 	"""
 
-	#Must copy file name into first parameter
 	flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
 	config.googleClientSecretFileName, scopes=['https://www.googleapis.com/auth/youtube.readonly','https://www.googleapis.com/auth/youtube.force-ssl'])
 	credentials = flow.run_local_server()
@@ -85,7 +83,7 @@ def getAppropYTSongs(link:str):
 		try:
 			response = request.execute()
 		except Exception as e:
-			return "Error: " + str(e), None, None
+			return "Error: " + str(e)
 		#indicates whether the variable "metadata" was assigned a message saying that there is suspicious activity coming from the user's IP address as the only element in the array
 		azUnusActErrOccurred = False
 		#keeps track the amount of requests since the
@@ -105,17 +103,16 @@ def getAppropYTSongs(link:str):
 				songTitle = songTitle[songTitle.find(' - ')+3:endIndForSongTitleStr-1]
 			azUnusActErrOccurred,reqsSinceLastAZReq = LyricParsing.findAndParseLyrics([artists],songTitle,appropSongIDs,item['snippet']['resourceId']['videoId'],azUnusActErrOccurred,reqsSinceLastAZReq,youtube)
 			if type(azUnusActErrOccurred)==None:
-				return "File retrieval error", None, None
+				return "File retrieval error"
 		if 'nextPageToken' in response:
 			nextPageToken=response['nextPageToken']
-	return youtube,appropSongIDs
+	return appropSongIDs
 
 def getAppropYTMusicSongs(link:str):
 	"""
 	Uses the YT Music api to collect artist and song title info from each song in a playlist and returns ids corresponding to songs deemed appropriate
 	@param link : link to YouTube Music playlist
-	@return appropSongIDs : list of YouTube Music ids for songs deemed appropriate for children by the program
-	@returned ytmusic : resource object that can read, create, and edit playlists
+	@return : list of YouTube Music ids for songs deemed appropriate for children by the program on success, string error message on failure
 	"""
 	
 	appropSongIDs = []
@@ -124,7 +121,7 @@ def getAppropYTMusicSongs(link:str):
 	try:
 		data = ytmusic.get_playlist(StrParsing.getYTPlaylistID(link),limit=None)
 	except Exception as e:
-		return "Error: " + str(e), None
+		return "Error: " + str(e)
 	#indicates whether the variable "metadata" was assigned a message saying that there is suspicious activity coming from the user's IP address as the only element in the array
 	azUnusActErrOccurred = False
     #keeps track the amount of requests since the
@@ -140,8 +137,8 @@ def getAppropYTMusicSongs(link:str):
 		songTitle = songTitle[:endIndForSongTitleStr]
 		azUnusActErrOccurred,reqsSinceLastAZReq = LyricParsing.findAndParseLyrics(artists,songTitle,appropSongIDs,track['videoId'],azUnusActErrOccurred,reqsSinceLastAZReq,ytmusic)
 		if type(azUnusActErrOccurred)==None:
-			return "File retrieval error", None
-	return appropSongIDs,ytmusic
+			return "File retrieval error"
+	return appropSongIDs
 
 #Soundcloud is still working on access to its API (in 2021 they announced that they will figure out another way to start authorizing developer apps instead of a Google form, but they still haven't) and I cannot find any wrappers that can create playlists
 def getAppropSouncloudSongs(link:str):
