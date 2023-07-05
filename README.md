@@ -4,11 +4,10 @@ This program is meant to take in a music playlist link or file with one or more 
 
 # Setup
 
-*Test packaging the code into executables.
 Certain setups need to be completed before you run the program.
 
 1. If you inputting a Spotify, YouTube, or YouTube Music playlist, go through the Genius Lyric API Setup
-2. If you want to separate appropriate music from a YouTube playlist, I strongly recommend that you select the YouTube music option instead because most if not all music should transfer over once you find a playlist there, and the YouTube option has limits that will be bothersome (read below if you would still like to use YouTube instead of YouTube Music). Also, the setup for YouTube Music is much shorter.
+2. If you want to separate appropriate music from a YouTube playlist, I strongly recommend that you select the YouTube Music option instead because most if not all music should transfer over once you find a playlist there, and the YouTube option has limits that may not allow the program to add all the appropriate songs to the playlist (read below if you would still like to use YouTube instead of YouTube Music). Also, the setup for YouTube Music is much shorter.
 3. For each type of playlist you desire to input and create, go to the corresponding setup section (i.e. Spotify Setup for Spotify playlist input and creation)
 
 ## Genius Lyric API Setup
@@ -55,7 +54,7 @@ You can skip steps 1-5 if you are **not** on a Windows machine. These steps are 
 
 ## Youtube Setup
 
-It is important to note that YouTube's API limits playlist creation and addition a lot since it costs more quota points. To clarify, every hour you get a max quota of 10,000 points. Requesting the information for every 50 songs from a playlist costs 1 point each, creating a playlist costs 50, and adding one song to the playlist costs 50. So for a playlist with 200 songs, 4 points would be used for requesting the playlist information and 50 would be used for creating a playlist which leaves us with 9946 quota points left. This only allows for 198 of the songs to be added. If there are more songs to be added after the quota is reached, you will be given the option to wait an hour for the quota to refill or to receive links of the songs to be added. I highly recommend you create a playlist beforehand, and input it into the appropriate place when you run the program.
+It is important to note that YouTube's API limits playlist creation and addition a lot since it costs more quota points. To clarify, you get a max quota of 10,000 points per day. Requesting the information for every 50 songs from a playlist costs 1 point each, creating a playlist costs 50, and adding one song to the playlist costs 50. So for a playlist with 200 songs, 4 points would be used for requesting the playlist information and 50 would be used for creating a playlist which leaves us with 9946 quota points left. This only allows for 198 of the songs to be added. If there are more songs to be added after the quota is reached, you would have to wait an entire day to be able to add the rest of the songs using this part of the program. I highly recommend you create a playlist beforehand, and input it into the appropriate place when you run the program.
 
 1. Go to https://console.cloud.google.com/apis/credentials?authuser=1 and make sure you are logged in to Google
 2. Click check box next to "I agree to the Google Cloud Platform Terms of Service , and the terms of service of any applicable services and APIs." and click "Agree and Continue"
@@ -76,6 +75,21 @@ It is important to note that YouTube's API limits playlist creation and addition
 17. Click the Enabled APIs & Services tab on the left
 18. Search for "YouTube Data API v3" or scroll down, and click on it under the YouTube section
 19. Click "Enable"
+
+# Installing and Running
+
+1. If you have Python skip to step 4. Otherwise, go to https://www.python.org/downloads/ and click the button that says "Download Python"
+2. Click on the exe installer for Python and click through to continue and make sure you know where it is downloaded to
+3. Set the path by following the instructions for whichever system you use:
+Windows - https://www.tutorialspoint.com/How-to-set-python-environment-variable-PYTHONPATH-on-Windows#:~:text=Set%20PYTHONPATH%20using%20Command%20Prompt&text=Click%20on%20the%20%22Environment%20Variables,to%20save%20the%20environment%20variable.
+Linux - https://www.tutorialspoint.com/How-to-set-python-environment-variable-PYTHONPATH-on-Linux#:~:text=By%20setting%20the%20PYTHONPATH%20environment,of%20the%20default%20search%20paths.
+Mac - https://www.educative.io/answers/how-to-add-python-to-the-path-variable-in-mac
+4. On the github page, click the green button that says "Code" and then "Download zip"
+5. Find the zip file, right click on it, extract it to a desired folder, and copy the full path of the extracted folder (should look something like "C:.../desired_folder/Appropriate-Song-Separator")
+6. Open up the terminal/command prompt
+7. Change the directory to the folder that was extracted by typing "cd" and pasting the path you copied earlier (CTRL + SHIFT + V) and pressing Enter
+8. Type "python GUI.py" and press Enter
+9. Enter the appropriate information and pay attention to the text box at the bottom for info about the program's run
 
 # Ideas for Future Features
 
