@@ -5,14 +5,14 @@ import googleapiclient.errors
 from StrParsing import getYTPlaylistID, getSpotifyPlaylistID, getStrAppropSongIDs
 from ytmusicapi import YTMusic
 #trim off quote marks for each id
-def createSpotifyPlaylist(link:str,title:str,descrip:str,appropSongIDs:list[str],username:str):
+def createSpotifyPlaylist(link:str,title:str,descrip:str,appropSongIDs,username:str):
 	"""
 	Creates or edits the child-appropriate Spotify playlists and adds the songs with the IDs indcated in appropSongIDs
 
 	@param link : link to premade playlist that user inputted or empty string if no link is inputted
 	@param title : title of the new playlist
 	@param descrip : description for the new playlist
-	@param appropSongIDs : list of string Spotify ids of the appropriate songs
+	@param appropSongIDs : list or string of Spotify ids of the songs deemed appropriate by the program
 	@param username : username of the Spotify user using this program
 	@return : If the playlist contains at least one song, then a message telling the user to check their playlist is returned, otherwise a message indicating error or that there are no appropriate songs is returned.
 	@return : None on success, otherwise the portion of appropSongIDs that still needs to be added
@@ -21,7 +21,7 @@ def createSpotifyPlaylist(link:str,title:str,descrip:str,appropSongIDs:list[str]
 
 	#if the user inputted appropSongIDs from a previous failed run, then it will be converted into a list
 	if type(appropSongIDs)==str:
-		appropSongIDs = appropSongIDs.split(', ')
+		appropSongIDs = appropSongIDs.split(' ')
 	#if there are any ids in appropSongIDs, then playlist creation will happen
 	if(appropSongIDs):
 			token = SpotifyOAuth(client_id=config.spotifyClientID,client_secret=config.spotifyClientSecret,scope="playlist-modify-private",redirect_uri="https://localhost:8080/callback")
@@ -74,11 +74,11 @@ def createSpotifyPlaylist(link:str,title:str,descrip:str,appropSongIDs:list[str]
 	else:
 			return "There are no appropriate songs in the given playlist.", None, None
 
-def createYTPlaylist(ytResource,appropSongIDs:list[str],link:str,title:str,descrip:str,private:bool):
+def createYTPlaylist(ytResource,appropSongIDs,link:str,title:str,descrip:str,private:bool):
 	"""
 	Creates or edits a YouTube playlist and adds videos with the ids listed in appropSongIDs
 	@param ytResource : YouTube object with the necessary credentials to read, create, and update a playlist
-	@param appropSongIDs : list of ids of YouTube videos that have been determined to be appropriate
+	@param appropSongIDs : list or string of ids of YouTube videos that have been determined to be appropriate
 	@param link : link for premade playlist or empty string if not given a link
 	@param title : title that the user wants the playlist to have
 	@param descrip : description for the playlist that the user desires
@@ -90,7 +90,7 @@ def createYTPlaylist(ytResource,appropSongIDs:list[str],link:str,title:str,descr
 
 	#if the user inputted appropSongIDs from a previous failed run, then it will be converted into a list
 	if type(appropSongIDs)==str:
-		appropSongIDs = appropSongIDs.split(', ')
+		appropSongIDs = appropSongIDs.split(' ')
 	if(appropSongIDs):
 		numSongsAdded = 0
 		playlistID = ''
@@ -141,16 +141,20 @@ def createYTPlaylist(ytResource,appropSongIDs:list[str],link:str,title:str,descr
 	else:
 		return "There are no appropriate songs in the given playlist.", None, ''
 
-def createYTMusicPlaylist(ytMusicResource:YTMusic,appropSongIDs:list[str],link:str,title:str,descrip:str,private:bool):
+def createYTMusicPlaylist(ytMusicResource:YTMusic,appropSongIDs,link:str,title:str,descrip:str,private:bool):
 	"""
 	Creates or edits a YouTube music playlist and adds the songs with the ids listed in appropSongIDs to the playlist
 	@param ytMusicResource : resource object that can request the creation and editing of playlists
+	@param appropSongIDs : list or string of ids of YouTube Music songs that were deemed appropriate
 	@param link : link to existing playlist that the user wants the songs added to
 	@param descrip : description for the new playlist that the user wants add
 	@param status : bool indicating whether the user wants the new playlist to be private
 	@return : 'Check your playlists' on success, str error message on error
 	@return : None on success, the appropriate song ids that still need to be added on failure
 	"""
+
+	if type(appropSongIDs)==str:
+		appropSongIDs = appropSongIDs.split(' ')
 	if not link:
 		try:
 			ytMusicResource.create_playlist(title,descrip,'PRIVATE' if private else 'PUBLIC',appropSongIDs)
