@@ -29,7 +29,6 @@ def getAppropSpotifySongs(link:str)->list[str]|str:
 	while(data['next']):
 		#refreshes access token if it has expired
 		token_info = token.cache_handler.get_cached_token()
-		#checks if token expired or is going to expire in a minute and refreshes if so
 		if token.is_token_expired(token_info):
 			token = SpotifyOAuth(client_id=config.spotifyClientID,client_secret=config.spotifyClientSecret,scope="playlist-read-private",redirect_uri="https://localhost:8080/callback",username=config.spotifyUserID)
 			spotifyObj = spotipy.Spotify(auth_manager=token)
@@ -43,9 +42,9 @@ def getAppropSpotifySongs(link:str)->list[str]|str:
 					return "Error " + str(e)
 				attempts+=1
 				print(data)
-		#indicates whether the variable "metadata" was assigned a message saying that there is suspicious activity coming from the user's IP address as the only element in the array
+		#indicates whether the variable "metadata" in the AZ API library was assigned a message saying that there is suspicious activity coming from the user's IP address as the only element in the array
 		azUnusActErrOccurred = False
-		#keeps track the amount of requests since the
+		#keeps track the amount of requests since the last AZ API request
 		reqsSinceLastAZReq = 0
 		for item in data['items']:
 			if not item['track']['explicit']:
@@ -56,7 +55,6 @@ def getAppropSpotifySongs(link:str)->list[str]|str:
 				if type(azUnusActErrOccurred)==None:
 					return "File retrieval error"
 		data = spotifyObj.next(data)
-		
 	return appropSongIds
 
 def getAppropYTSongs(link:str):
@@ -67,7 +65,7 @@ def getAppropYTSongs(link:str):
 	"""
 
 	flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
-	config.googleClientSecretFileName, scopes=['https://www.googleapis.com/auth/youtube.readonly','https://www.googleapis.com/auth/youtube.force-ssl'])
+	config.googleClientSecretFileName, scopes=['https://www.googleapis.com/auth/youtube.readonly'])
 	credentials = flow.run_local_server()
 	youtube = googleapiclient.discovery.build('youtube', 'v3', credentials=credentials)
 	appropSongIDs = []

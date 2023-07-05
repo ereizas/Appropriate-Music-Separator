@@ -64,7 +64,7 @@ def getStrAppropSongIDs(appropSongIDs:list[str],firstInd:int=0):
     """
     Returns a string version of song ids to be later inputted into the appropriate part of the GUI
     @param appropSongIDs : list of song ids deemed appropriate for children
-    @param firstInd : first index of the splice
+    @param firstInd : first index of the splice of remaining appropriate song IDs
     """
     strAppropSongIDs = ''
     for id in appropSongIDs[firstInd:]:

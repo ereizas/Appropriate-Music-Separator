@@ -28,6 +28,8 @@ class GUI():
     def buildGeneralGUI(self,master,private):
         """
         Builds the part of the GUI that applies for all types of playlists
+        @param master : root application
+        @private : bool indicating whether the user wants the playlist to be private
         """
         ttk.Label(master,text='If you have it, paste the list of appropriate song IDs from a previous run:').grid(row=0,column=0)
         self.prevRunAppropIDsEntry = ttk.Entry(master,width=100)
@@ -53,11 +55,14 @@ class GUI():
         self.privateCheckbutton.grid(row=13,column=0)
         
     def separatePlaylist(self):
+        """
+        Integrates the backend with the front end by collecting and parsing user input and calling the appropriate functions from PlaylistParsing and PlaylistCreation
+        """
         self.outputTextBox.insert(END,"Processing playlist, make sure to check the command line/terminal (For Windows: PowerShell) that you ran this on for any updates.\n\n")
         streamingService = self.streamingServiceDropDown.get()
         prevRunAppropIDs = self.prevRunAppropIDsEntry.get()
         if streamingService=='Spotify':
-            #this variable like the other ones at the top of the following conditionals won't be used as parameters if 'not prevRunAppropIDs' is False
+            #this variable like the other ones at the top of the following conditionals concerning streaming services won't be used as parameters if 'not prevRunAppropIDs' is False
             spotifyGetRet=None
             if not prevRunAppropIDs:
                 spotifyGetRet = PlaylistParsing.getAppropSpotifySongs(self.linkEntry.get())
@@ -103,13 +108,21 @@ class GUI():
         print('Done.')
 
     def runSongSeparatorThread(self):
+        """
+        Enables the GUI to run as one thread and the backend to run as another
+        """
+
         threading.Thread(target=self.separatePlaylist).start()
 
     
     def buildEndFrame(self,master):
+        """
+        Builds the last two parts of the GUI
+        """
+
         self.separateButton = ttk.Button(master,text='Separate Appropriate Music',command=self.runSongSeparatorThread)
         self.separateButton.grid(row=0,column=0)   
-        ttk.Label(master,text='Output (Ignore any messages about subtitles and transcripts):').grid(row=1,column=0)
+        ttk.Label(master,text='Output:').grid(row=1,column=0)
         self.outputTextBox = Text(master,width=150,height=15)
         self.outputTextBox.grid(row=2,column=0)
         sys.stdout = TextRedirector(self.outputTextBox,'stdout')
