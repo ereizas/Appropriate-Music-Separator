@@ -41,37 +41,38 @@ def createSpotifyPlaylist(link:str,title:str,descrip:str,appropSongIDs,username:
 				playlistID = getSpotifyPlaylistID(link)
 				if playlistID==None:
 					return "Error: Invalid premade playlist link", getStrAppropSongIDs(appropSongIDs), None	
+			#only 100 songs can be added at a time
 			if(len(appropSongIDs)<100):
+				try:
+					spotifyObj.user_playlist_add_tracks(user=username,playlist_id=playlistID,tracks=appropSongIDs)
+				except Exception as e:
+					if not link:
+						return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs), 'https://open.spotify.com/playlist/'+playlistData['id']
+					else:
+						return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs), None
+			else:
+				for i in range(int(len(appropSongIDs)/100)):
+					#refreshes access token if it has expired
+					token_info = token.cache_handler.get_cached_token()
+					#checks if token expired or is going to expire in a minute and refreshes if so
+					if token.is_token_expired(token_info):
+						token = SpotifyOAuth(client_id=config.spotifyClientID,client_secret=config.spotifyClientSecret,scope="playlist-read-private",redirect_uri="https://localhost:8080/callback",username=config.spotifyUserID)
+						spotifyObj = spotipy.Spotify(auth_manager=token)
 					try:
-						spotifyObj.user_playlist_add_tracks(user=username,playlist_id=playlistID,tracks=appropSongIDs)
+						spotifyObj.user_playlist_add_tracks(user=username,playlist_id=playlistID,tracks=appropSongIDs[i*100:i*100+100])
 					except Exception as e:
 						if not link:
-							return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs), 'https://open.spotify.com/playlist/'+playlistData['id']
+							return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs,i*100), 'https://open.spotify.com/playlist/'+playlistData['id']
 						else:
-							return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs), None
-			else:
-					for i in range(int(len(appropSongIDs)/100)):
-						#refreshes access token if it has expired
-						token_info = token.cache_handler.get_cached_token()
-						#checks if token expired or is going to expire in a minute and refreshes if so
-						if token.is_token_expired(token_info):
-							token = SpotifyOAuth(client_id=config.spotifyClientID,client_secret=config.spotifyClientSecret,scope="playlist-read-private",redirect_uri="https://localhost:8080/callback",username=config.spotifyUserID)
-							spotifyObj = spotipy.Spotify(auth_manager=token)
-						try:
-							spotifyObj.user_playlist_add_tracks(user=username,playlist_id=playlistID,tracks=appropSongIDs[i*100:i*100+100])
-						except Exception as e:
-							if not link:
-								return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs,i*100), 'https://open.spotify.com/playlist/'+playlistData['id']
-							else:
-								return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs,i*100), None
-					if len(appropSongIDs)%100!=0:
-						try:
-							spotifyObj.user_playlist_add_tracks(user=username,playlist_id=playlistID,tracks=appropSongIDs[int(len(appropSongIDs)/100)*100:])
-						except Exception as e:
-							if not link:
-								return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs,int(len(appropSongIDs)/100)*100), 'https://open.spotify.com/playlist/'+playlistData['id']
-							else:
-								return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs,int(len(appropSongIDs)/100)*100), None
+							return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs,i*100), None
+				if len(appropSongIDs)%100!=0:
+					try:
+						spotifyObj.user_playlist_add_tracks(user=username,playlist_id=playlistID,tracks=appropSongIDs[int(len(appropSongIDs)/100)*100:])
+					except Exception as e:
+						if not link:
+							return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs,int(len(appropSongIDs)/100)*100), 'https://open.spotify.com/playlist/'+playlistData['id']
+						else:
+							return "Error: " + str(e), getStrAppropSongIDs(appropSongIDs,int(len(appropSongIDs)/100)*100), None
 			return "Check your playlists", None, None
 	else:
 			return "There are no appropriate songs in the given playlist.", None, None
