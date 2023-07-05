@@ -145,7 +145,9 @@ def parseYTTranscript(id:str, inappropWordList:list[str]):
         return False
     #later do except (error name) for language unavailable errors and other recoverable errors
     except Exception as e:
-        print('This error will not stop the program. This is only appearing to reveal how the lyric APIs are working. Error: ' + str(e))
+        strError = str(e)
+        if 'subtitle' not in strError and 'transcript' not in strError:
+            print('This error will not stop the program. This is only appearing to reveal how the lyric APIs are working. Error: ' + strError)
         return None
 
 def findAndParseLyrics(artists:list, songTitle:str, appropSongIDs:list, id:str, azUnusActErrOccurred:bool,reqsSinceLastAZReq:int,ytResource):
