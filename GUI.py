@@ -2,7 +2,7 @@ import PlaylistParsing, PlaylistCreation, config
 from tkinter import *
 from tkinter import ttk
 import sys, threading
-#add conditional for if appropSongIDs is inputted
+
 class GUI():
     def __init__(self,root):
         #bool for whether GUI is running
@@ -18,23 +18,19 @@ class GUI():
         
         generalFrame=ttk.Frame(self.__root)
         generalFrame.pack(padx=5,pady=5)
-        self.prevRunAppropIDs = StringVar()
-        self.newLink = StringVar()
-        self.playlistTitle = StringVar()
-        self.descrip = StringVar()
         #need to decide upper or lower case based on whether YT or YT Music is selected
         self.private = BooleanVar()
-        self.buildGeneralGUI(generalFrame,self.prevRunAppropIDs,self.newLink,self.playlistTitle,self.descrip,self.private)
+        self.buildGeneralGUI(generalFrame,self.private)
         endFrame = ttk.Frame(self.__root)
         endFrame.pack(padx=5,pady=5)
         self.buildEndFrame(endFrame)
 
-    def buildGeneralGUI(self,master,prevRunAppropIDs,newLink,playlistTitle,descrip,private):
+    def buildGeneralGUI(self,master,private):
         """
         Builds the part of the GUI that applies for all types of playlists
         """
         ttk.Label(master,text='If you have it, paste the list of appropriate song IDs from a previous run:').grid(row=0,column=0)
-        self.prevRunAppropIDsEntry = ttk.Entry(master,width=100,textvariable=prevRunAppropIDs)
+        self.prevRunAppropIDsEntry = ttk.Entry(master,width=100)
         self.prevRunAppropIDsEntry.grid(row=1,column=0)
         ttk.Label(master,text='Enter or paste in the link of the playlist you want the program to analyze:').grid(row=2,column=0)
         self.linkEntry = ttk.Entry(master,width=100)
@@ -45,26 +41,30 @@ class GUI():
         self.streamingServiceDropDown = ttk.Combobox(master,values=['Spotify','YouTube Music','YouTube'])
         self.streamingServiceDropDown.grid(row=6,column=0)
         ttk.Label(master,text='Enter the link for a premade playlist(optional, but highly recommended for YouTube, and for Spotify the playlist MUST be private) or skip to the next entry to create a new one:').grid(row=7,column=0)
-        self.premadePlaylistLinkEntry = ttk.Entry(master,width=100,textvariable=newLink)
+        self.premadePlaylistLinkEntry = ttk.Entry(master,width=100)
         self.premadePlaylistLinkEntry.grid(row=8,column=0)
         ttk.Label(master,text='Enter a title for the new playlist:').grid(row=9,column=0)
-        self.titleEntry = ttk.Entry(master,width=40,textvariable=playlistTitle)
+        self.titleEntry = ttk.Entry(master,width=40)
         self.titleEntry.grid(row=10,column=0)
         ttk.Label(master,text="Enter a description for the new playlist (optional):").grid(row=11,column=0)
-        self.descripEntry = ttk.Entry(master,width=50,textvariable=descrip)
+        self.descripEntry = ttk.Entry(master,width=50)
         self.descripEntry.grid(row=12,column=0)
         self.privateCheckbutton = ttk.Checkbutton(master,text='Check this if you want the playlist to be private (YouTube and YouTube Music only)',variable=private)
-        self.privateCheckbutton.grid(row=0,column=0)
+        self.privateCheckbutton.grid(row=13,column=0)
         
     def separatePlaylist(self):
         self.outputTextBox.insert(END,"Processing playlist, make sure to check the command line/terminal (For Windows: PowerShell) that you ran this on for any updates.\n\n")
         streamingService = self.streamingServiceDropDown.get()
+        prevRunAppropIDs = self.prevRunAppropIDsEntry.get()
         if streamingService=='Spotify':
-            spotifyGetRet = PlaylistParsing.getAppropSpotifySongs(self.linkEntry.get())
-            if type(spotifyGetRet)==str:
-                self.outputTextBox.insert(END,str(spotifyGetRet)+'\n\n')
-            else:
-                message, strAppropSongIDs, newLink = PlaylistCreation.createSpotifyPlaylist(self.premadePlaylistLinkEntry.get(),self.titleEntry.get(),self.descripEntry.get(),spotifyGetRet,config.spotifyUserID)
+            #this variable like the other ones at the top of the following conditionals won't be used as parameters if 'not prevRunAppropIDs' is False
+            spotifyGetRet=None
+            if not prevRunAppropIDs:
+                spotifyGetRet = PlaylistParsing.getAppropSpotifySongs(self.linkEntry.get())
+                if type(spotifyGetRet)==str:
+                    self.outputTextBox.insert(END,str(spotifyGetRet)+'\n\n')
+            if type(spotifyGetRet)!=str:
+                message, strAppropSongIDs, newLink = PlaylistCreation.createSpotifyPlaylist(self.premadePlaylistLinkEntry.get(),self.titleEntry.get(),self.descripEntry.get(),spotifyGetRet if not prevRunAppropIDs else prevRunAppropIDs,config.spotifyUserID)
                 if 'Error:' in message:
                     outputTBMessage = message + " Appropriate Song IDs: " + strAppropSongIDs
                     if newLink:
@@ -73,21 +73,25 @@ class GUI():
                 else:
                     self.outputTextBox.insert(END,message + '\n\n')
         elif streamingService=='YouTube Music':
-            ytMusicGetRet,ytMusicResource = PlaylistParsing.getAppropYTMusicSongs(self.linkEntry.get())
-            if ytMusicResource==None:
-                self.outputTextBox.insert(END,ytMusicGetRet+'\n\n')
-            else:
-                message, remainingAppropSongIDs = PlaylistCreation.createYTMusicPlaylist(ytMusicResource,ytMusicGetRet,self.premadePlaylistLinkEntry.get(),self.titleEntry.get(),self.descripEntry.get(),self.private.get())
+            ytMusicGetRet = 0
+            if not prevRunAppropIDs:
+                ytMusicGetRet = PlaylistParsing.getAppropYTMusicSongs(self.linkEntry.get())
+                if type(ytMusicGetRet)==str:
+                    self.outputTextBox.insert(END,ytMusicGetRet+'\n\n')
+            if type(ytMusicGetRet)!=str:
+                message, remainingAppropSongIDs = PlaylistCreation.createYTMusicPlaylist(ytMusicGetRet if not prevRunAppropIDs else prevRunAppropIDs,self.premadePlaylistLinkEntry.get(),self.titleEntry.get(),self.descripEntry.get(),self.private.get())
                 if remainingAppropSongIDs != None:
                     self.outputTextBox.insert(END,message + '\n\nRemaining Appropriate Song IDs: ' + remainingAppropSongIDs + '\n\n')
                 else:
                     self.outputTextBox.insert(END,message+'\n\n')
         elif streamingService=='YouTube':
-            ytGetRet, appropSongIDs = PlaylistParsing.getAppropYTSongs(self.linkEntry.get())
-            if appropSongIDs==None:
-                self.outputTextBox.insert(END, ytGetRet+'\n\n')
-            else:
-                message, remainingAppropSongIDs, link = PlaylistCreation.createYTPlaylist(ytGetRet,appropSongIDs,self.premadePlaylistLinkEntry.get(),self.titleEntry.get(),self.descripEntry.get(),self.private.get())
+            ytGetRet = []
+            if not prevRunAppropIDs:
+                ytGetRet= PlaylistParsing.getAppropYTSongs(self.linkEntry.get())
+                if type(ytGetRet)==str:
+                    self.outputTextBox.insert(END, ytGetRet+'\n\n')
+            if type(ytGetRet)!=str:
+                message, remainingAppropSongIDs, link = PlaylistCreation.createYTPlaylist(ytGetRet if not prevRunAppropIDs else prevRunAppropIDs,self.premadePlaylistLinkEntry.get(),self.titleEntry.get(),self.descripEntry.get(),self.private.get())
                 if type(message)==str and type(remainingAppropSongIDs)==str:
                     self.outputTextBox.insert(END,message+'\n\nRemaining Appropriate Song IDs: '+remainingAppropSongIDs+'\n\n'+link+'\n\n')
                 elif remainingAppropSongIDs==None:
