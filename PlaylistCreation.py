@@ -1,6 +1,8 @@
 import config
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
+import google_auth_oauthlib.flow
+import googleapiclient.discovery
 import googleapiclient.errors
 from StrParsing import getYTPlaylistID, getSpotifyPlaylistID, getStrAppropSongIDs
 from ytmusicapi import YTMusic
@@ -74,10 +76,9 @@ def createSpotifyPlaylist(link:str,title:str,descrip:str,appropSongIDs,username:
 	else:
 			return "There are no appropriate songs in the given playlist.", None, None
 
-def createYTPlaylist(ytResource,appropSongIDs,link:str,title:str,descrip:str,private:bool):
+def createYTPlaylist(appropSongIDs,link:str,title:str,descrip:str,private:bool):
 	"""
 	Creates or edits a YouTube playlist and adds videos with the ids listed in appropSongIDs
-	@param ytResource : YouTube object with the necessary credentials to read, create, and update a playlist
 	@param appropSongIDs : list or string of ids of YouTube videos that have been determined to be appropriate
 	@param link : link for premade playlist or empty string if not given a link
 	@param title : title that the user wants the playlist to have
@@ -88,6 +89,10 @@ def createYTPlaylist(ytResource,appropSongIDs,link:str,title:str,descrip:str,pri
 	@return : link to playlist if new one was created and error occurred, otherwise empty str
 	"""
 
+	flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
+	config.googleClientSecretFileName, scopes=['https://www.googleapis.com/auth/youtube.readonly','https://www.googleapis.com/auth/youtube.force-ssl'])
+	credentials = flow.run_local_server()
+	ytResource = googleapiclient.discovery.build('youtube', 'v3', credentials=credentials)
 	#if the user inputted appropSongIDs from a previous failed run, then it will be converted into a list
 	if type(appropSongIDs)==str:
 		appropSongIDs = appropSongIDs.split(' ')
@@ -141,10 +146,9 @@ def createYTPlaylist(ytResource,appropSongIDs,link:str,title:str,descrip:str,pri
 	else:
 		return "There are no appropriate songs in the given playlist.", None, ''
 
-def createYTMusicPlaylist(ytMusicResource:YTMusic,appropSongIDs,link:str,title:str,descrip:str,private:bool):
+def createYTMusicPlaylist(appropSongIDs,link:str,title:str,descrip:str,private:bool):
 	"""
 	Creates or edits a YouTube music playlist and adds the songs with the ids listed in appropSongIDs to the playlist
-	@param ytMusicResource : resource object that can request the creation and editing of playlists
 	@param appropSongIDs : list or string of ids of YouTube Music songs that were deemed appropriate
 	@param link : link to existing playlist that the user wants the songs added to
 	@param descrip : description for the new playlist that the user wants add
@@ -153,6 +157,7 @@ def createYTMusicPlaylist(ytMusicResource:YTMusic,appropSongIDs,link:str,title:s
 	@return : None on success, the appropriate song ids that still need to be added on failure
 	"""
 
+	ytMusicResource = YTMusic('oauth.json')
 	if type(appropSongIDs)==str:
 		appropSongIDs = appropSongIDs.split(' ')
 	if not link:
