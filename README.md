@@ -89,7 +89,7 @@ Mac - https://www.educative.io/answers/how-to-add-python-to-the-path-variable-in
 6. Open up the terminal/command prompt
 7. Change the directory to the folder that was extracted by typing "cd" and pasting the path you copied earlier (CTRL + SHIFT + V) and pressing Enter
 8. Type "python gui.py" and press Enter
-9. Enter the appropriate information and pay attention to the text box at the bottom for info about the program's run
+9. Enter the appropriate information and pay attention to the text box at the bottom for info about the program's run. If you see a YouTube or Spotify link pop in the text box, there might also be a website that pops up on your browser. Make sure these links match or at least make sure the links are Spotify or YouTube links and allow all permissions.
 
 # Ideas for Future Features
 
