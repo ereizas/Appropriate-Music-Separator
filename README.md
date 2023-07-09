@@ -78,7 +78,7 @@ It is important to note that YouTube's API limits playlist creation and addition
 
 # Installing and Running
 
-1. If you have Python skip to step 4. Otherwise, go to https://www.python.org/downloads/ and click the button that says "Download Python"
+1. If you have Python and have set up the path environment variable for it, skip to step 4. Otherwise, go to https://www.python.org/downloads/ and click the button that says "Download Python"
 2. Click on the exe installer for Python and click through to continue and make sure you know where it is downloaded to
 3. Set the path by following the instructions for whichever system you use:
 Windows - https://www.tutorialspoint.com/How-to-set-python-environment-variable-PYTHONPATH-on-Windows#:~:text=Set%20PYTHONPATH%20using%20Command%20Prompt&text=Click%20on%20the%20%22Environment%20Variables,to%20save%20the%20environment%20variable.
@@ -88,8 +88,11 @@ Mac - https://www.educative.io/answers/how-to-add-python-to-the-path-variable-in
 5. Find the zip file, right click on it, extract it to a desired folder, and copy the full path of the extracted folder (should look something like "C:.../desired_folder/Appropriate-Song-Separator")
 6. Open up the terminal/command prompt
 7. Change the directory to the folder that was extracted by typing "cd" and pasting the path you copied earlier (CTRL + SHIFT + V) and pressing Enter
-8. Type "python gui.py" and press Enter
-9. Enter the appropriate information and pay attention to the text box at the bottom for info about the program's run. If you see a YouTube or Spotify link pop in the text box, there might also be a website that pops up on your browser. Make sure these links match or at least make sure the links are Spotify or YouTube links and allow all permissions.
+8. Type or paste "py -3 -m venv .venv" and press Enter (after you do this once for the project you won't have to do it again)
+9. Type or paste ".venv/scripts/activate"
+10. Type or paste "pip install -r requirements.txt" and press Enter 
+11. To run the program, type "python gui.py" and press Enter
+12. Enter the appropriate information and pay attention to the text box at the bottom for info about the program's run. If you see a YouTube or Spotify link pop in the text box, there might also be a website that pops up on your browser. Make sure these links match or at least make sure the links are Spotify or YouTube links and allow all permissions.
 
 # Ideas for Future Features
 
