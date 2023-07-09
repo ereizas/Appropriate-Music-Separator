@@ -1,4 +1,4 @@
-import LyricParsing, config, StrParsing
+import lyric_parsing, config, str_parsing
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import google_auth_oauthlib.flow
@@ -17,7 +17,7 @@ def getAppropSpotifySongs(link:str)->list[str]|str:
 	playlistID, appropSongIds= '', []
 	token = SpotifyOAuth(client_id=config.spotifyClientID,client_secret=config.spotifyClientSecret,scope="playlist-read-private",redirect_uri="https://localhost:8080/callback",username=config.spotifyUserID)
 	spotifyObj = spotipy.Spotify(auth_manager=token)
-	playlistID = StrParsing.getSpotifyPlaylistID(link)
+	playlistID = str_parsing.getSpotifyPlaylistID(link)
 	if playlistID==None:
 		return "Error: Invalid Spotify link"
 	data = dict()
@@ -51,7 +51,7 @@ def getAppropSpotifySongs(link:str)->list[str]|str:
 				songTitle = item['track']['name']
 				#conditional in list comprehension prevents featured artists mentioned in the song title from being repeated
 				artists = [artist['name'] for artist in item['track']['artists'] if artist['name'] not in songTitle]
-				azUnusActErrOccurred,reqsSinceLastAZReq = LyricParsing.findAndParseLyrics(artists,songTitle,appropSongIds,item['track']['id'],azUnusActErrOccurred,reqsSinceLastAZReq,'')
+				azUnusActErrOccurred,reqsSinceLastAZReq = lyric_parsing.findAndParseLyrics(artists,songTitle,appropSongIds,item['track']['id'],azUnusActErrOccurred,reqsSinceLastAZReq,'')
 				if type(azUnusActErrOccurred)==None:
 					return "File retrieval error"
 		data = spotifyObj.next(data)
@@ -75,7 +75,7 @@ def getAppropYTSongs(link:str):
 		request = youtube.playlistItems().list(
 			part="snippet",
 			maxResults=50,
-			playlistId=StrParsing.getYTPlaylistID(link),
+			playlistId=str_parsing.getYTPlaylistID(link),
 			pageToken = nextPageToken
 		)
 		try:
@@ -99,7 +99,7 @@ def getAppropYTSongs(link:str):
 					if potentialInd > hyphenInd and potentialInd < endIndForSongTitleStr:
 						endIndForSongTitleStr=potentialInd
 				songTitle = songTitle[songTitle.find(' - ')+3:endIndForSongTitleStr-1]
-			azUnusActErrOccurred,reqsSinceLastAZReq = LyricParsing.findAndParseLyrics([artists],songTitle,appropSongIDs,item['snippet']['resourceId']['videoId'],azUnusActErrOccurred,reqsSinceLastAZReq,youtube)
+			azUnusActErrOccurred,reqsSinceLastAZReq = lyric_parsing.findAndParseLyrics([artists],songTitle,appropSongIDs,item['snippet']['resourceId']['videoId'],azUnusActErrOccurred,reqsSinceLastAZReq,youtube)
 			if type(azUnusActErrOccurred)==None:
 				return "File retrieval error"
 		if 'nextPageToken' in response:
@@ -117,7 +117,7 @@ def getAppropYTMusicSongs(link:str):
 	data = dict()
 	ytmusic = YTMusic('oauth.json')
 	try:
-		data = ytmusic.get_playlist(StrParsing.getYTPlaylistID(link),limit=None)
+		data = ytmusic.get_playlist(str_parsing.getYTPlaylistID(link),limit=None)
 	except Exception as e:
 		return "Error: " + str(e)
 	#indicates whether the variable "metadata" was assigned a message saying that there is suspicious activity coming from the user's IP address as the only element in the array
@@ -133,7 +133,7 @@ def getAppropYTMusicSongs(link:str):
 					if potentialInd > -1 and potentialInd < endIndForSongTitleStr:
 						endIndForSongTitleStr=potentialInd
 		songTitle = songTitle[:endIndForSongTitleStr]
-		azUnusActErrOccurred,reqsSinceLastAZReq = LyricParsing.findAndParseLyrics(artists,songTitle,appropSongIDs,track['videoId'],azUnusActErrOccurred,reqsSinceLastAZReq,ytmusic)
+		azUnusActErrOccurred,reqsSinceLastAZReq = lyric_parsing.findAndParseLyrics(artists,songTitle,appropSongIDs,track['videoId'],azUnusActErrOccurred,reqsSinceLastAZReq,ytmusic)
 		if type(azUnusActErrOccurred)==None:
 			return "File retrieval error"
 	return appropSongIDs
