@@ -1,0 +1,8 @@
+spotipy
+google-api-python-client
+ytmusicapi
+requests
+lyricsgenius
+azapi
+youtube_transcript_api
+google_auth_oauthlib

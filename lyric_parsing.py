@@ -1,4 +1,4 @@
-import requests, config, StrParsing
+import requests, config, str_parsing
 from lyricsgenius import Genius
 import azapi
 from youtube_transcript_api import YouTubeTranscriptApi
@@ -175,7 +175,7 @@ def findAndParseLyrics(artists:list, songTitle:str, appropSongIDs:list, id:str, 
     while(songInapprop==None and numNoneRetVals<len(lyricParsers)):
         numNoneRetVals+=1
         if lyricParsersInd==1:
-            songInapprop = lyricParsers[lyricParsersInd](StrParsing.formatArtists(artists),StrParsing.formatSongTitle(songTitle),inappropWordList)
+            songInapprop = lyricParsers[lyricParsersInd](str_parsing.formatArtists(artists),str_parsing.formatSongTitle(songTitle),inappropWordList)
             if azUnusActErrOccurred:
                 reqsSinceLastAZReq+=1
             #resets the variable to allow another attempt at an AZ API request

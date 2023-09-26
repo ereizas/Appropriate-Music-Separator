@@ -4,7 +4,7 @@ from spotipy.oauth2 import SpotifyOAuth
 import google_auth_oauthlib.flow
 import googleapiclient.discovery
 import googleapiclient.errors
-from StrParsing import getYTPlaylistID, getSpotifyPlaylistID, getStrAppropSongIDs
+from str_parsing import getYTPlaylistID, getSpotifyPlaylistID, getStrAppropSongIDs
 from ytmusicapi import YTMusic
 #trim off quote marks for each id
 def createSpotifyPlaylist(link:str,title:str,descrip:str,appropSongIDs,username:str):
