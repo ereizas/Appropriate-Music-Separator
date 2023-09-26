@@ -6,7 +6,7 @@ This program is meant to take in a music playlist link or file with one or more 
 
 Certain setups need to be completed before you run the program.
 
-1. If you inputting a Spotify, YouTube, or YouTube Music playlist, go through the Genius Lyric API Setup
+1. If you are inputting a Spotify, YouTube, or YouTube Music playlist, go through the Genius Lyric API Setup
 2. If you want to separate appropriate music from a YouTube playlist, I strongly recommend that you select the YouTube Music option instead because most if not all music should transfer over once you find a playlist there, and the YouTube option has limits that may not allow the program to add all the appropriate songs to the playlist (read below if you would still like to use YouTube instead of YouTube Music). Also, the setup for YouTube Music is much shorter.
 3. For each type of playlist you desire to input and create, go to the corresponding setup section (i.e. Spotify Setup for Spotify playlist input and creation)
 
