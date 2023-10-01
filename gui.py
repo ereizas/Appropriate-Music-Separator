@@ -58,7 +58,7 @@ class GUI():
         """
         Integrates the backend with the front end by collecting and parsing user input and calling the appropriate functions from playlist_parsing and playlist_creation
         """
-        self.outputTextBox.insert(END,"Processing playlist, make sure to check the textbox at the bottom for any updates.\n\n")
+        self.outputTextBox.insert(END,"Processing playlist, make sure to check this textbox for any updates.\n\n")
         streamingService = self.streamingServiceDropDown.get()
         prevRunAppropIDs = self.prevRunAppropIDsEntry.get()
         if streamingService=='Spotify':
