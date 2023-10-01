@@ -4,13 +4,19 @@ This program is meant to take in a music playlist link or file with one or more 
 
 # Setup
 
-Certain setups need to be completed before you run the program.
+## General Setup 
 
-1. If you are inputting a Spotify, YouTube, or YouTube Music playlist, go through the Genius Lyric API Setup
-2. If you want to separate appropriate music from a YouTube playlist, I strongly recommend that you select the YouTube Music option instead because most if not all music should transfer over once you find a playlist there, and the YouTube option has limits that may not allow the program to add all the appropriate songs to the playlist (read below if you would still like to use YouTube instead of YouTube Music). Also, the setup for YouTube Music is much shorter.
-3. For each type of playlist you desire to input and create, go to the corresponding setup section (i.e. Spotify Setup for Spotify playlist input and creation)
+### Python
 
-## Genius Lyric API Setup
+1. If you have Python and have set up the path environment variable for it, skip to step 4. Otherwise, go to https://www.python.org/downloads/ and click the button that says "Download Python"
+2. Click on the exe installer for Python
+3. If there is a box that says something about adding to PATH, check it, allow permission to override path length at the end of the click through and skip to step 4. Click through to continue and make sure you know where it is downloaded to
+4. Set the path by following the instructions for whichever system you use:
+Windows - https://www.tutorialspoint.com/How-to-set-python-environment-variable-PYTHONPATH-on-Windows#:~:text=Set%20PYTHONPATH%20using%20Command%20Prompt&text=Click%20on%20the%20%22Environment%20Variables,to%20save%20the%20environment%20variable.
+Linux - https://www.tutorialspoint.com/How-to-set-python-environment-variable-PYTHONPATH-on-Linux#:~:text=By%20setting%20the%20PYTHONPATH%20environment,of%20the%20default%20search%20paths.
+Mac - https://www.educative.io/answers/how-to-add-python-to-the-path-variable-in-mac
+
+### Genius Lyric API Setup
 
 This is what allows the program to request lyrics from Genius to analyze and pick out appropriate songs.
 
@@ -20,7 +26,15 @@ This is what allows the program to request lyrics from Genius to analyze and pic
 4. Copy the Client ID and paste it into the single quote marks next to geniusClientID in the config.py file
 5. Copy the Client Secret and paste it into the single quote marks next to geniusClientSecret in the same file
 
-## Spotify Setup
+### Proxy 
+
+If you see the error "Index Error - list index out of range" or something very similar, it likely means that one of the lyric APIs has placed a ban on your IP address (which means you have ran this program a lot leading to an overuse of AZLyrics API). This means that the program will prevent further use of the API leading to possibly more appropriate songs being missed. Fortunately, there is an easy solution. If you see the error happen during a program run, end the program, or if you want to prevent the IP ban from happening in the first place, paste "" into the quote marks next to proxyAPI in the config.py. If you would like, you can change the parameters in the link (i.e. "country=__") according to the documentation at https://docs.proxyscrape.com.
+
+## Streaming Service APIs Setup
+
+For each type of playlist you desire to input and create, go to the corresponding streaming service setup section (i.e. Spotify Setup for Spotify playlist input and creation).
+
+### Spotify Setup
 
 You can skip steps 1-5 if you are **not** on a Windows machine. These steps are necessary in order to get some required info to put into the program. The Spotify playlist creation may take about 1.5 to 7 times the amount of songs not marked explicit in the playlist in seconds. For example, if you have 30 songs not marked explicit in your playlist, this program can take about 45 to 210 seconds to finish. This is due to the search times for the APIs I was able to find. *If your playlist is especially long (a few hundred songs most of which do not have explicit labels), then you should go into the settings and make sure your computer does not fall asleep during the duration of the program (you will most likely need to set "Sleep on battery power" and "Sleep on charge" to Never).
 
@@ -41,20 +55,20 @@ You can skip steps 1-5 if you are **not** on a Windows machine. These steps are 
 15. Copy the Client ID and paste it into the single quote marks next to spotifyClientID in the config.py file you downloaded
 16. Click view Client Secret and do the same as the last step but for the single quote marks next to spotifyClientSecret
 
-## YouTube Music Setup
+### YouTube Music Setup
 
 1. Open the command prompt or terminal on your computer (search either one of these in the home search or applications search feature)
 2. Type "cd" then find the location of the folder/directory that you downloaded the project to and copy (CTRL + C) and paste (CTRL + SHIFT + V) that into the terminal.
-3. Type "pip install ytmusicapi" and press Enter
+3. Type "pip install ytmusicapi" and press Enter (if you already entered "pip install requirements.txt" then you can go to step 4)
 4. Type ytmusicapi oauth
 5. Check if code at the end of the link that pops up and the code shown in the terminal match up
 6. On the site, click on the account that you want the playlist to be created in
 7. Press Enter in the terminal
 8. Confirm there is a file called oauth.json in the directory/folder for the program.
 
-## Youtube Setup
+### Youtube Setup
 
-It is important to note that YouTube's API limits playlist creation and addition a lot since it costs more quota points. To clarify, you get a max quota of 10,000 points per day. Requesting the information for every 50 songs from a playlist costs 1 point each, creating a playlist costs 50, and adding one song to the playlist costs 50. So for a playlist with 200 songs, 4 points would be used for requesting the playlist information and 50 would be used for creating a playlist which leaves us with 9946 quota points left. This only allows for 198 of the songs to be added. If there are more songs to be added after the quota is reached, you would have to wait an entire day to be able to add the rest of the songs using this part of the program. I highly recommend you create a playlist beforehand, and input it into the appropriate place when you run the program.
+It is important to note that YouTube's API limits playlist creation and addition a lot since it costs more quota points. To clarify, you get a max quota of 10,000 points per day. Requesting the information for every 50 songs from a playlist costs 1 point each, creating a playlist costs 50, and adding one song to the playlist costs 50. So for a playlist with 200 songs, 4 points would be used for requesting the playlist information and 50 would be used for creating a playlist which leaves us with 9946 quota points left. This only allows for 198 of the songs to be added. If there are more songs to be added after the quota is reached, you would have to wait an entire day to be able to add the rest of the songs using this part of the program. Thus, I strongly recommend that you select the YouTube Music option instead because most if not all music from your playlists should transfer over, and there aren't any known limits to the YouTube Music API. I highly recommend you create a playlist beforehand, and input it into the appropriate place when you run the program. Also, the setup for YouTube Music is much shorter.
 
 1. Go to https://console.cloud.google.com/apis/credentials?authuser=1 and make sure you are logged in to Google
 2. Click check box next to "I agree to the Google Cloud Platform Terms of Service , and the terms of service of any applicable services and APIs." and click "Agree and Continue"
@@ -78,22 +92,15 @@ It is important to note that YouTube's API limits playlist creation and addition
 
 # Installing and Running
 
-1. If you have Python and have set up the path environment variable for it, skip to step 4. Otherwise, go to https://www.python.org/downloads/ and click the button that says "Download Python"
-2. Click on the exe installer for Python
-3. If there is a box that says something about adding to PATH, check it, allow permission to override path length at the end of the click through and skip to step 4. Click through to continue and make sure you know where it is downloaded to
-4. Set the path by following the instructions for whichever system you use:
-Windows - https://www.tutorialspoint.com/How-to-set-python-environment-variable-PYTHONPATH-on-Windows#:~:text=Set%20PYTHONPATH%20using%20Command%20Prompt&text=Click%20on%20the%20%22Environment%20Variables,to%20save%20the%20environment%20variable.
-Linux - https://www.tutorialspoint.com/How-to-set-python-environment-variable-PYTHONPATH-on-Linux#:~:text=By%20setting%20the%20PYTHONPATH%20environment,of%20the%20default%20search%20paths.
-Mac - https://www.educative.io/answers/how-to-add-python-to-the-path-variable-in-mac
-5. On the github page, click the green button that says "Code" and then "Download zip"
-6. Find the zip file, right click on it, extract it to a desired folder, and copy the full path of the extracted folder (should look something like "C:.../desired_folder/Appropriate-Song-Separator")
-7. Open up the terminal/command prompt
-8. Change the directory to the folder that was extracted by typing "cd" and pasting the path you copied earlier (CTRL + SHIFT + V) and pressing Enter
-9. Type or paste "py -3 -m venv .venv" and press Enter (after you do this once for the project you won't have to do it again)
-10. Type or paste ".venv/scripts/activate" (This step and step 11 will have to be done everytime you open up a new terminal to run a program that has installed a virtual environement by doing step 8)
-11. Type or paste "pip install -r requirements.txt" and press Enter 
-12. To run the program, type "python gui.py" and press Enter
-13. Enter the appropriate information and pay attention to the text box at the bottom for info about the program's run. If you see a YouTube or Spotify link pop in the text box, there might also be a website that pops up on your browser. Make sure these links match or at least make sure the links are Spotify or YouTube links and allow all permissions.
+1. On the github page, click the green button that says "Code" and then "Download zip"
+2. Find the zip file, right click on it, extract it to a desired folder, and copy the full path of the extracted folder (should look something like "C:.../desired_folder/Appropriate-Song-Separator")
+3. Open up the terminal/command prompt
+4. Change the directory to the folder that was extracted by typing "cd" and pasting the path you copied earlier (CTRL + SHIFT + V) and pressing Enter
+5. Type or paste "py -3 -m venv .venv" and press Enter (after you do this once for the project you won't have to do it again)
+6. Type or paste ".venv/scripts/activate" (This step and step 11 will have to be done everytime you open up a new terminal to run a program that has installed a virtual environement by doing step 8)
+7. Type or paste "pip install -r requirements.txt" and press Enter 
+8. To run the program, type "python gui.py" and press Enter
+9. Enter the appropriate information and pay attention to the text box at the bottom for info about the program's run. If you see a YouTube or Spotify link pop in the text box, there might also be a website that pops up on your browser. Make sure these links match or at least make sure the links are Spotify or YouTube links and allow all permissions.
 
 # Ideas for Future Features
 

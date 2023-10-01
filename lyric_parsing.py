@@ -5,6 +5,14 @@ from youtube_transcript_api import YouTubeTranscriptApi
 from traceback import format_exc
 #declared globally to allow fair cycling and easing of the workload of lyrics apis in findAndParseLyrics()
 lyricParsersInd = 0
+#creates list of proxies to use AZ API to avoid IP ban
+proxDict = dict()
+try:
+    proxReqResponse = requests.get('https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=10000&country=US&ssl=all&anonymity=all')
+    proxDict = {'http':proxReqResponse.text.split('\r\n')[:-1][0]}
+except Exception as e:
+    print(e)
+
 def getInappropWordList(file: str)->list[str]|None:
     """
     Decrypts the Vigenere cypher and returns a list of the inappropriate words to look for
@@ -105,7 +113,7 @@ def parseAZLyrics(artists: list, songTitle: str,inappropWordList: list[str]):
     @return : True if there is an index error when accessing metadata[1] in the azapi library code, False otherwise
     """
     
-    api = azapi.AZlyrics()
+    api = azapi.AZlyrics(proxies=proxDict)
     #added the join here so that it would not alter artists for if parseLyristLyrics() needs the formatted string after if this function returns None
     artists = ' '.join(artists)
     api.artist=artists
